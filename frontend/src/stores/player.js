@@ -1,6 +1,11 @@
 import { computed, reactive, toRefs, watch } from 'vue'
 import { TEXTS, buildSearchLoadedLabel, buildSearchPageLabel, buildSearchSummary } from '../constants/texts'
 import { getLyric, getSongDetail, resolveStreamUrl, searchSongs } from '../services/musicApi'
+import {
+  clearNativePlayerNotification,
+  initNativePlayerNotification,
+  updateNativePlayerNotification,
+} from '../services/playerNotification'
 import { findActiveLyricIndex, parseLyric } from '../utils/lyrics'
 import {
   readStorageArray,
@@ -260,6 +265,7 @@ function clearCurrentPlayback() {
   state.currentIndex = -1
   state.isPlaying = false
   resetTrackState()
+  void clearNativePlayerNotification()
 }
 
 function rememberRecent(song) {
@@ -897,6 +903,11 @@ function attachAudioListeners() {
 }
 
 attachAudioListeners()
+void initNativePlayerNotification({
+  onPrevious: playPrevious,
+  onToggle: togglePlayback,
+  onNext: playNext,
+})
 
 if (initialPlayback.currentSong?.cid) {
   const resumeTime = initialPlayback.currentTime
@@ -1002,6 +1013,24 @@ watch(
   () => {
     persistPlaybackState()
   },
+)
+
+watch(
+  () => [state.currentSong?.cid, state.currentSong?.name, state.isPlaying, state.currentIndex, state.currentQueue.length],
+  () => {
+    if (!state.currentSong?.cid) {
+      void clearNativePlayerNotification()
+      return
+    }
+
+    void updateNativePlayerNotification({
+      currentSong: state.currentSong,
+      isPlaying: state.isPlaying,
+      hasPrevious: state.currentQueue.length > 1,
+      hasNext: state.currentQueue.length > 1,
+    })
+  },
+  { immediate: true },
 )
 
 const searchSummary = computed(() =>
