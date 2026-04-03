@@ -18,7 +18,7 @@ function getCustomBridge() {
 }
 
 export function getNativeBridge() {
-  return getCapacitorBridge() || getCustomBridge()
+  return getCustomBridge() || getCapacitorBridge()
 }
 
 export function hasNativeBridge() {
