@@ -2,6 +2,7 @@ import { formatArtists } from '../utils/track'
 import { getNativeBridge, getRuntimeTarget, invokeNative, RUNTIME_TARGETS } from './runtime'
 
 let notificationListenerHandle = null
+let notificationPermissionReady = false
 
 function isNativeRuntime() {
   return getRuntimeTarget() === RUNTIME_TARGETS.native
@@ -10,6 +11,16 @@ function isNativeRuntime() {
 export async function initNativePlayerNotification(handlers = {}) {
   if (!isNativeRuntime()) {
     return
+  }
+
+  if (!notificationPermissionReady) {
+    try {
+      await invokeNative('ensureNotificationPermission', {})
+    } catch {
+      // Ignore permission request failures and let the app continue.
+    }
+
+    notificationPermissionReady = true
   }
 
   if (notificationListenerHandle) {
@@ -57,8 +68,8 @@ export async function updateNativePlayerNotification({
       hasPrevious,
       hasNext,
     })
-  } catch {
-    // Ignore notification sync failures to avoid affecting playback.
+  } catch (error) {
+    console.warn('Failed to sync native player notification:', error)
   }
 }
 
@@ -69,7 +80,7 @@ export async function clearNativePlayerNotification() {
 
   try {
     await invokeNative('clearNowPlaying', {})
-  } catch {
-    // Ignore notification clear failures.
+  } catch (error) {
+    console.warn('Failed to clear native player notification:', error)
   }
 }

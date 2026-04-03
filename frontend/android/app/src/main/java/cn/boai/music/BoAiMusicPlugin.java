@@ -1,5 +1,6 @@
 package cn.boai.music;
 
+import android.Manifest;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
@@ -17,11 +18,19 @@ import com.getcapacitor.JSObject;
 import com.getcapacitor.Plugin;
 import com.getcapacitor.PluginCall;
 import com.getcapacitor.PluginMethod;
+import com.getcapacitor.PermissionState;
 import com.getcapacitor.annotation.CapacitorPlugin;
+import com.getcapacitor.annotation.Permission;
+import com.getcapacitor.annotation.PermissionCallback;
 
 import java.lang.ref.WeakReference;
 
-@CapacitorPlugin(name = "BoAiMusic")
+@CapacitorPlugin(
+    name = "BoAiMusic",
+    permissions = {
+        @Permission(alias = "notifications", strings = { Manifest.permission.POST_NOTIFICATIONS })
+    }
+)
 public class BoAiMusicPlugin extends Plugin {
 
     private static final String CHANNEL_ID = "boai_music_playback";
@@ -67,9 +76,38 @@ public class BoAiMusicPlugin extends Plugin {
     }
 
     @PluginMethod
+    public void ensureNotificationPermission(PluginCall call) {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) {
+            JSObject result = new JSObject();
+            result.put("granted", true);
+            call.resolve(result);
+            return;
+        }
+
+        if (getPermissionState("notifications") == PermissionState.GRANTED) {
+            JSObject result = new JSObject();
+            result.put("granted", true);
+            call.resolve(result);
+            return;
+        }
+
+        requestPermissionForAlias("notifications", call, "notificationPermissionCallback");
+    }
+
+    @PluginMethod
     public void clearNowPlaying(PluginCall call) {
         clearNowPlayingInternal();
         call.resolve();
+    }
+
+    @PermissionCallback
+    private void notificationPermissionCallback(PluginCall call) {
+        JSObject result = new JSObject();
+        result.put("granted", getPermissionState("notifications") == PermissionState.GRANTED);
+
+        if (call != null) {
+            call.resolve(result);
+        }
     }
 
     private void updateNowPlayingInternal(String title, String artist, boolean isPlaying) {
