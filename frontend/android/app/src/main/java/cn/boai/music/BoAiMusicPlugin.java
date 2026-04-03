@@ -78,7 +78,7 @@ public class BoAiMusicPlugin extends Plugin {
         }
 
         if (mediaSession != null) {
-            long playbackState = isPlaying ? PlaybackStateCompat.STATE_PLAYING : PlaybackStateCompat.STATE_PAUSED;
+            int playbackState = isPlaying ? PlaybackStateCompat.STATE_PLAYING : PlaybackStateCompat.STATE_PAUSED;
             long playbackActions =
                 PlaybackStateCompat.ACTION_PLAY |
                 PlaybackStateCompat.ACTION_PAUSE |
