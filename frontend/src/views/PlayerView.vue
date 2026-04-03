@@ -237,8 +237,13 @@ watch(overlayOpen, (open) => {
   document.body.style.overflow = open ? 'hidden' : ''
 })
 
+watch(mobileLyricsOpen, (open) => {
+  document.body.classList.toggle('body--lyrics-open', open && !isDesktop.value)
+})
+
 onBeforeUnmount(() => {
   document.body.style.overflow = ''
+  document.body.classList.remove('body--lyrics-open')
 })
 </script>
 

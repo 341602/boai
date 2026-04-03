@@ -3,6 +3,11 @@
   min-height: 100vh;
   min-height: 100dvh;
   overflow-x: hidden;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.app-root--mobile * {
+  -webkit-tap-highlight-color: transparent;
 }
 
 .app-root--mobile::before {
@@ -27,6 +32,11 @@
   top: calc(12px + env(safe-area-inset-top, 0px));
   left: 12px;
   font-size: 0.72rem;
+}
+
+body.body--lyrics-open .app-root--mobile .app-brand {
+  opacity: 0;
+  visibility: hidden;
 }
 
 .app-root--mobile .page-shell {
