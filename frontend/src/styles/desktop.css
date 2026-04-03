@@ -1,0 +1,189 @@
+@media (min-width: 980px) {
+  body {
+    overflow: hidden;
+  }
+
+  #app,
+  .app-root--desktop {
+    height: 100vh;
+    overflow: hidden;
+  }
+
+  .app-root--desktop .page-shell {
+    height: 100%;
+    overflow: hidden;
+  }
+
+  .app-root--desktop .page-shell--home {
+    display: grid;
+    grid-template-rows: auto auto minmax(0, 1fr);
+    row-gap: var(--space-4);
+  }
+
+  .app-root--desktop .page-shell--playlist {
+    display: grid;
+    grid-template-rows: auto minmax(0, 1fr);
+    row-gap: var(--space-4);
+  }
+
+  .app-root--desktop .page-shell--player {
+    display: grid;
+    grid-template-rows: minmax(0, 1fr);
+  }
+
+  .app-root--desktop .page-header {
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: end;
+    margin-bottom: 0;
+  }
+
+  .app-root--desktop .page-shell--home .hero-panel,
+  .app-root--desktop .page-shell--home .home-layout,
+  .app-root--desktop .page-shell--playlist .playlist-workspace {
+    margin: 0;
+  }
+
+  .app-root--desktop .search-bar {
+    grid-template-columns: minmax(0, 1fr) 52px;
+  }
+
+  .app-root--desktop .stats-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
+  .app-root--desktop .home-layout {
+    grid-template-columns: minmax(0, 1.2fr) 360px;
+    align-items: stretch;
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  .app-root--desktop .playlist-workspace {
+    grid-template-columns: 300px minmax(0, 1fr);
+    align-items: stretch;
+    height: 100%;
+    overflow: hidden;
+  }
+
+  .app-root--desktop .home-layout__main,
+  .app-root--desktop .home-layout__side,
+  .app-root--desktop .playlist-sidebar,
+  .app-root--desktop .playlist-main {
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  .app-root--desktop .home-layout__main > .section-card,
+  .app-root--desktop .page-shell--playlist > .section-card,
+  .app-root--desktop .playlist-main > .section-card {
+    height: 100%;
+  }
+
+  .app-root--desktop .home-layout__side {
+    height: 100%;
+    grid-template-rows: var(--desktop-home-side-top) minmax(0, 1fr);
+  }
+
+  .app-root--desktop .home-entry-card,
+  .app-root--desktop .home-recent-panel {
+    height: 100%;
+  }
+
+  .app-root--desktop .home-layout__side > .section-card:last-child {
+    height: 100%;
+  }
+
+  .app-root--desktop .section-card {
+    grid-template-rows: auto minmax(0, 1fr);
+  }
+
+  .app-root--desktop .search-table {
+    height: 100%;
+  }
+
+  .app-root--desktop .track-list {
+    max-height: none;
+    height: 100%;
+  }
+
+  .app-root--desktop .playlist-sidebar__create--inline {
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+  }
+
+  .app-root--desktop .playlist-stage__header {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+  }
+
+  .app-root--desktop .playlist-stage {
+    height: 100%;
+  }
+
+  .app-root--desktop .playlist-track-row {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+
+  .app-root--desktop .player-screen {
+    height: 100%;
+    min-height: 0;
+    display: grid;
+    grid-template-rows: auto minmax(0, 1fr);
+    overflow: hidden;
+  }
+
+  .app-root--desktop .player-screen__header {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    align-items: center;
+  }
+
+  .app-root--desktop .player-screen__body {
+    height: 100%;
+    min-height: 0;
+    overflow: hidden;
+    grid-template-columns: 340px minmax(0, 1fr);
+    align-items: stretch;
+  }
+
+  .app-root--desktop .player-screen__side {
+    min-height: 0;
+    align-content: start;
+  }
+
+  .app-root--desktop .player-screen__lyric {
+    height: 100%;
+    min-height: 0;
+    display: grid;
+    grid-template-rows: auto minmax(0, 1fr);
+    overflow: hidden;
+  }
+
+  .app-root--desktop .player-panel-overlay {
+    inset: 0;
+    align-items: flex-start;
+    justify-content: flex-end;
+    padding:
+      92px
+      max(12px, calc((100vw - var(--app-max-width)) / 2))
+      calc(var(--global-bar-height) + 24px)
+      12px;
+    background: rgba(15, 23, 42, 0.08);
+  }
+
+  .app-root--desktop .player-panel {
+    width: 400px;
+    max-height: calc(100vh - var(--global-bar-height) - 132px);
+  }
+
+  .app-root--desktop .player-panel--mode {
+    width: 320px;
+  }
+
+  .app-root--desktop .lyric-stage {
+    height: 100%;
+    max-height: none;
+    display: block;
+  }
+}

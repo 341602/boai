@@ -1,0 +1,17 @@
+{
+  "name": "boai-music-api",
+  "version": "1.0.1",
+  "main": "./server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js",
+    "test": "node test.js"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "~4.16.1",
+    "iconv-lite": "^0.7.2",
+    "morgan": "~1.9.1",
+    "pinyin-pro": "^3.28.0"
+  }
+}

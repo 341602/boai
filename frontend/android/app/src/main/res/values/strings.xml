@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">BoAi Music</string>
+    <string name="title_activity_main">BoAi Music</string>
+    <string name="package_name">cn.boai.music</string>
+    <string name="custom_url_scheme">cn.boai.music</string>
+</resources>

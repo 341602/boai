@@ -1,0 +1,11 @@
+{
+  "appId": "cn.boai.music",
+  "appName": "BoAi Music",
+  "webDir": "dist",
+  "bundledWebRuntime": false,
+  "plugins": {
+    "SplashScreen": {
+      "launchAutoHide": true
+    }
+  }
+}
