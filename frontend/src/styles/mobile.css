@@ -53,9 +53,14 @@ body.body--lyrics-open .app-root--mobile .app-brand {
 
 .app-root--mobile .page-shell--home,
 .app-root--mobile .page-shell--playlist,
+.app-root--mobile .page-shell--settings,
 .app-root--mobile .page-shell--player {
   display: grid;
   gap: 10px;
+}
+
+.app-root--mobile .page-shell--settings {
+  padding-top: calc(56px + env(safe-area-inset-top, 0px));
 }
 
 .app-root--mobile .page-shell--player {
@@ -1043,6 +1048,43 @@ body.body--lyrics-open .app-root--mobile .app-brand {
   box-shadow: none;
 }
 
+.app-root--mobile .settings-layout {
+  gap: 10px;
+}
+
+.app-root--mobile .settings-section {
+  padding: 12px;
+  background: rgba(247, 250, 251, 0.56);
+  border-color: rgba(255, 255, 255, 0.42);
+  backdrop-filter: blur(12px) saturate(104%);
+  -webkit-backdrop-filter: blur(12px) saturate(104%);
+}
+
+.app-root--mobile .settings-choice,
+.app-root--mobile .settings-row {
+  padding: 11px 12px;
+  background: rgba(255, 255, 255, 0.74);
+  border-color: rgba(255, 255, 255, 0.46);
+  box-shadow: none;
+}
+
+.app-root--mobile .settings-choice__icon {
+  width: 30px;
+  height: 30px;
+  background: rgba(255, 255, 255, 0.52);
+}
+
+.app-root--mobile .settings-choice__meta strong,
+.app-root--mobile .settings-row__meta strong {
+  font-size: 0.9rem;
+}
+
+.app-root--mobile .settings-choice__meta p,
+.app-root--mobile .settings-row__meta p,
+.app-root--mobile .settings-row__value {
+  font-size: 0.78rem;
+}
+
 .app-root--mobile .global-player {
   left: 12px;
   right: 12px;
@@ -1090,7 +1132,7 @@ body.body--lyrics-open .app-root--mobile .app-brand {
 
 .app-root--mobile .global-player__mobile-panel--nav {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   align-items: center;
   gap: 10px;
   min-height: 82px;

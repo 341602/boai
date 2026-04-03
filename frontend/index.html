@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="zh-CN" data-theme="light">
+<html lang="zh-CN">
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
@@ -11,6 +11,30 @@
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="default" />
     <title>&#21338;&#29233;</title>
+    <script>
+      ;(() => {
+        try {
+          const storageKey = 'boai:theme-mode'
+          const stored = window.localStorage.getItem(storageKey)
+          const mode = stored === 'light' || stored === 'dark' || stored === 'system' ? stored : 'system'
+          const systemDark =
+            typeof window.matchMedia === 'function' &&
+            window.matchMedia('(prefers-color-scheme: dark)').matches
+          const resolved = mode === 'system' ? (systemDark ? 'dark' : 'light') : mode
+          const root = document.documentElement
+          const themeColor = resolved === 'dark' ? '#111827' : '#dce4e7'
+
+          root.setAttribute('data-theme', resolved)
+          root.style.colorScheme = resolved
+
+          const metaThemeColor = document.querySelector('meta[name="theme-color"]')
+
+          if (metaThemeColor) {
+            metaThemeColor.setAttribute('content', themeColor)
+          }
+        } catch (_) {}
+      })()
+    </script>
   </head>
   <body>
     <div id="app"></div>

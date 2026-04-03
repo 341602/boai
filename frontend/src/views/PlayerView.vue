@@ -1,6 +1,6 @@
 <script setup>
 import { computed, onBeforeUnmount, ref, watch } from 'vue'
-import { ArrowDownToLine, ArrowDownUp, ArrowLeft, Check, Heart, House, ListMusic, ListPlus, Repeat1, Shuffle, Trash2, X } from 'lucide-vue-next'
+import { ArrowDownToLine, ArrowDownUp, ArrowLeft, Check, Heart, House, ListMusic, ListPlus, Repeat1, Settings2, Shuffle, Trash2, X } from 'lucide-vue-next'
 import { useRouter } from 'vue-router'
 import LyricDisplay from '../components/LyricDisplay.vue'
 import PlaylistPickerModal from '../components/PlaylistPickerModal.vue'
@@ -266,6 +266,14 @@ onBeforeUnmount(() => {
             :aria-label="TEXTS.navPlaylist"
           >
             <ListMusic class="button-icon" />
+          </RouterLink>
+          <RouterLink
+            class="nav-pill nav-pill--icon"
+            :to="{ name: 'settings' }"
+            :title="TEXTS.navSettings"
+            :aria-label="TEXTS.navSettings"
+          >
+            <Settings2 class="button-icon" />
           </RouterLink>
         </div>
 

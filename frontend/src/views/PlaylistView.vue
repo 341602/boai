@@ -1,6 +1,6 @@
 <script setup>
 import { computed, ref, watch } from 'vue'
-import { Clock3, Disc3, FolderPlus, Heart, House, ListPlus, Play, Trash2 } from 'lucide-vue-next'
+import { Clock3, Disc3, FolderPlus, Heart, House, ListPlus, Play, Settings2, Trash2 } from 'lucide-vue-next'
 import { useRouter } from 'vue-router'
 import ConfirmDialog from '../components/ConfirmDialog.vue'
 import PlaylistCreateDialog from '../components/PlaylistCreateDialog.vue'
@@ -264,6 +264,14 @@ function favoriteLabel(song) {
         </RouterLink>
         <RouterLink class="nav-pill nav-pill--icon" :to="{ name: 'player' }" :title="TEXTS.navPlayer" :aria-label="TEXTS.navPlayer">
           <Disc3 class="button-icon" />
+        </RouterLink>
+        <RouterLink
+          class="nav-pill nav-pill--icon"
+          :to="{ name: 'settings' }"
+          :title="TEXTS.navSettings"
+          :aria-label="TEXTS.navSettings"
+        >
+          <Settings2 class="button-icon" />
         </RouterLink>
       </nav>
     </header>

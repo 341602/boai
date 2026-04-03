@@ -3,9 +3,11 @@ import './style.css'
 import './styles/mobile.css'
 import './styles/desktop.css'
 import App from './App.vue'
+import { initThemePreference } from './composables/useThemePreference'
 import router from './router'
 import { initCapacitorBridge } from './services/capacitorBridge'
 
+initThemePreference()
 await initCapacitorBridge()
 
 createApp(App).use(router).mount('#app')

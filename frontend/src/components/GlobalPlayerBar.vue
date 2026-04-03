@@ -1,6 +1,6 @@
 <script setup>
 import { computed, ref } from 'vue'
-import { House, ListMusic, Pause, Play, SkipBack, SkipForward } from 'lucide-vue-next'
+import { House, ListMusic, Pause, Play, Settings2, SkipBack, SkipForward } from 'lucide-vue-next'
 import { useRoute, useRouter } from 'vue-router'
 import { useViewportMode } from '../composables/useViewportMode'
 import { TEXTS } from '../constants/texts'
@@ -31,6 +31,11 @@ const mobileNavItems = [
     name: 'playlist',
     label: TEXTS.navPlaylist,
     icon: ListMusic,
+  },
+  {
+    name: 'settings',
+    label: TEXTS.navSettings,
+    icon: Settings2,
   },
 ]
 
