@@ -156,10 +156,10 @@ a {
 }
 
 .app-brand {
-  position: fixed;
+  position: absolute;
   top: 20px;
   left: max(12px, calc((100vw - var(--app-max-width)) / 2));
-  z-index: 26;
+  z-index: 12;
   color: var(--accent);
   font-size: 0.8rem;
   letter-spacing: 0.14em;
