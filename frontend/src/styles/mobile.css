@@ -682,17 +682,18 @@ body.body--lyrics-open .app-root--mobile .app-brand {
   inset: 0 0 calc(var(--global-bar-height) + 16px + env(safe-area-inset-bottom, 0px)) 0;
   align-items: flex-end;
   padding: 12px;
-  background: rgba(225, 232, 236, 0.72);
-  backdrop-filter: blur(14px) saturate(106%);
-  -webkit-backdrop-filter: blur(14px) saturate(106%);
+  background: rgba(225, 232, 236, 0.84);
+  backdrop-filter: blur(16px) saturate(106%);
+  -webkit-backdrop-filter: blur(16px) saturate(106%);
 }
 
 .app-root--mobile .player-panel {
   width: 100%;
   max-height: min(62vh, 520px);
   padding: 12px;
-  background: rgba(247, 250, 251, 0.92);
-  border-color: rgba(255, 255, 255, 0.56);
+  background: rgba(248, 250, 251, 0.97);
+  border-color: rgba(255, 255, 255, 0.62);
+  box-shadow: 0 20px 40px rgba(15, 23, 42, 0.08);
   backdrop-filter: blur(18px) saturate(110%);
   -webkit-backdrop-filter: blur(18px) saturate(110%);
 }
@@ -753,6 +754,31 @@ body.body--lyrics-open .app-root--mobile .app-brand {
 .app-root--mobile .confirm-dialog .plain-button {
   background: rgba(255, 255, 255, 0.8);
   border-color: rgba(255, 255, 255, 0.52);
+}
+
+.app-root--mobile .player-panel.surface::before,
+.app-root--mobile .player-panel.surface::after,
+.app-root--mobile .playlist-modal.surface::before,
+.app-root--mobile .playlist-modal.surface::after,
+.app-root--mobile .confirm-dialog.surface::before,
+.app-root--mobile .confirm-dialog.surface::after {
+  content: none;
+}
+
+.app-root--mobile .player-mode-list,
+.app-root--mobile .player-queue-list,
+.app-root--mobile .playlist-modal__create,
+.app-root--mobile .playlist-modal__list {
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.54);
+}
+
+.app-root--mobile .playlist-modal__create {
+  padding: 10px;
+}
+
+.app-root--mobile .playlist-modal__list {
+  padding: 6px;
 }
 
 .app-root--mobile .playlist-workspace {
@@ -1105,37 +1131,39 @@ body.body--lyrics-open .app-root--mobile .app-brand {
   width: 100%;
   padding: 14px;
   gap: 12px;
-  background: rgba(247, 250, 251, 0.94);
-  border-color: rgba(255, 255, 255, 0.58);
+  background: rgba(248, 250, 251, 0.97);
+  border-color: rgba(255, 255, 255, 0.62);
+  box-shadow: 0 20px 40px rgba(15, 23, 42, 0.08);
   backdrop-filter: blur(18px) saturate(110%);
   -webkit-backdrop-filter: blur(18px) saturate(110%);
 }
 
 .app-root--mobile .modal-backdrop {
   padding: 12px 12px calc(var(--global-bar-height) + 18px + env(safe-area-inset-bottom, 0px));
-  background: rgba(225, 232, 236, 0.78);
-  backdrop-filter: blur(14px) saturate(106%);
-  -webkit-backdrop-filter: blur(14px) saturate(106%);
+  background: rgba(225, 232, 236, 0.88);
+  backdrop-filter: blur(16px) saturate(106%);
+  -webkit-backdrop-filter: blur(16px) saturate(106%);
 }
 
 .app-root--mobile .confirm-dialog {
   width: 100%;
   max-width: 420px;
-  background: rgba(247, 250, 251, 0.95);
-  border-color: rgba(255, 255, 255, 0.58);
+  background: rgba(248, 250, 251, 0.97);
+  border-color: rgba(255, 255, 255, 0.62);
+  box-shadow: 0 20px 40px rgba(15, 23, 42, 0.08);
   backdrop-filter: blur(18px) saturate(110%);
   -webkit-backdrop-filter: blur(18px) saturate(110%);
 }
 
 .app-root--mobile .playlist-modal__item,
 .app-root--mobile .playlist-modal__field input {
-  background: rgba(255, 255, 255, 0.76);
-  border-color: rgba(255, 255, 255, 0.48);
+  background: rgba(255, 255, 255, 0.88);
+  border-color: rgba(255, 255, 255, 0.54);
 }
 
 .app-root--mobile .empty-state--modal {
-  background: rgba(255, 255, 255, 0.58);
-  border-color: rgba(255, 255, 255, 0.42);
+  background: rgba(255, 255, 255, 0.76);
+  border-color: rgba(255, 255, 255, 0.5);
 }
 
 @media (min-width: 720px) and (max-width: 979px) {
