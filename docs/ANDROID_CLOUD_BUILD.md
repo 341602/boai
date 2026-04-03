@@ -46,13 +46,59 @@ debug APK
 
 - 适合测试安装，不适合正式上架
 
+## Release 构建
+
+仓库里还提供了正式构建工作流：
+
+```text
+Android Release Build
+```
+
+对应文件：
+
+- `.github/workflows/android-release.yml`
+
+它会产出：
+
+- `app-release.apk`
+- `app-release.aab`
+
+### 你需要先配置 GitHub Secrets
+
+在仓库 `Settings -> Secrets and variables -> Actions` 里新增：
+
+- `ANDROID_KEYSTORE_BASE64`
+- `ANDROID_KEYSTORE_PASSWORD`
+- `ANDROID_KEY_ALIAS`
+- `ANDROID_KEY_PASSWORD`
+
+含义：
+
+- `ANDROID_KEYSTORE_BASE64`
+  - 你的签名 keystore 文件转成 base64 后的内容
+- `ANDROID_KEYSTORE_PASSWORD`
+  - keystore 密码
+- `ANDROID_KEY_ALIAS`
+  - key alias
+- `ANDROID_KEY_PASSWORD`
+  - key 密码
+
+### 本地如何生成 base64
+
+可以在你自己的电脑上执行：
+
+```powershell
+[Convert]::ToBase64String([IO.File]::ReadAllBytes("D:\path\to\boai-release.jks")) | Set-Clipboard
+```
+
+然后把剪贴板里的内容填进 `ANDROID_KEYSTORE_BASE64`。
+
 ## 后续如果要正式发布
 
-后面可以继续补：
+现在这部分已经补上了，下一步如果你要上架：
 
-- release 签名配置
-- GitHub Secrets 存储 keystore
-- 输出 `release APK` 或 `AAB`
+- Google Play：优先上传 `AAB`
+- 其他分发：可以直接用 `release APK`
 
 ## 关键说明
 

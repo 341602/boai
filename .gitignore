@@ -13,6 +13,8 @@ frontend/dist/
 frontend/android/.gradle/
 frontend/android/.idea/
 frontend/android/local.properties
+frontend/android/*.jks
+frontend/android/*.keystore
 frontend/android/app/build/
 frontend/android/build/
 

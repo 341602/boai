@@ -1,5 +1,27 @@
 apply plugin: 'com.android.application'
 
+def getSecret = { String name ->
+    def envValue = System.getenv(name)
+    if (envValue != null && envValue.toString().trim()) {
+        return envValue.toString().trim()
+    }
+
+    if (project.hasProperty(name)) {
+        def propValue = project.property(name)
+        if (propValue != null && propValue.toString().trim()) {
+            return propValue.toString().trim()
+        }
+    }
+
+    return null
+}
+
+def releaseStoreFile = getSecret("ANDROID_KEYSTORE_PATH")
+def releaseStorePassword = getSecret("ANDROID_KEYSTORE_PASSWORD")
+def releaseKeyAlias = getSecret("ANDROID_KEY_ALIAS")
+def releaseKeyPassword = getSecret("ANDROID_KEY_PASSWORD")
+def hasReleaseSigning = releaseStoreFile && releaseStorePassword && releaseKeyAlias && releaseKeyPassword
+
 android {
     namespace "cn.boai.music"
     compileSdk rootProject.ext.compileSdkVersion
@@ -16,9 +38,22 @@ android {
             ignoreAssetsPattern '!.svn:!.git:!.ds_store:!*.scc:.*:!CVS:!thumbs.db:!picasa.ini:!*~'
         }
     }
+    signingConfigs {
+        if (hasReleaseSigning) {
+            release {
+                storeFile file(releaseStoreFile)
+                storePassword releaseStorePassword
+                keyAlias releaseKeyAlias
+                keyPassword releaseKeyPassword
+            }
+        }
+    }
     buildTypes {
         release {
             minifyEnabled false
+            if (hasReleaseSigning) {
+                signingConfig signingConfigs.release
+            }
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
     }

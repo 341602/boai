@@ -65,6 +65,8 @@ Important:
   - `docs/APP_NATIVE_BRIDGE.md`
 - the Android cloud build guide is in:
   - `docs/ANDROID_CLOUD_BUILD.md`
+- the release build workflow is:
+  - `.github/workflows/android-release.yml`
 
 ## Files you should know
 
