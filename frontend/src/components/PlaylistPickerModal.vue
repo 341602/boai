@@ -1,5 +1,6 @@
 <script setup>
 import { ref, watch } from 'vue'
+import { Check, ListPlus, X } from 'lucide-vue-next'
 import { TEXTS } from '../constants/texts'
 
 const props = defineProps({
@@ -51,8 +52,8 @@ function submitCreate() {
             <h2>{{ TEXTS.playlistPickerTitle }}</h2>
             <p>{{ song?.name || TEXTS.noSongSelected }}</p>
           </div>
-          <button class="plain-button" type="button" @click="emit('close')">
-            {{ TEXTS.close }}
+          <button class="icon-button" type="button" :title="TEXTS.close" :aria-label="TEXTS.close" @click="emit('close')">
+            <X class="button-icon" />
           </button>
         </header>
 
@@ -86,8 +87,13 @@ function submitCreate() {
               <strong>{{ playlist.name }}</strong>
               <span>{{ playlist.tracks.length }} {{ TEXTS.trackUnit }}</span>
             </div>
-            <span class="playlist-modal__item-action">
-              {{ selectedIds.includes(playlist.id) ? TEXTS.playlistAdded : TEXTS.playlistAdd }}
+            <span
+              class="playlist-modal__item-action"
+              :title="selectedIds.includes(playlist.id) ? TEXTS.playlistAdded : TEXTS.playlistAdd"
+              :aria-label="selectedIds.includes(playlist.id) ? TEXTS.playlistAdded : TEXTS.playlistAdd"
+            >
+              <Check v-if="selectedIds.includes(playlist.id)" class="button-icon" />
+              <ListPlus v-else class="button-icon" />
             </span>
           </button>
         </div>

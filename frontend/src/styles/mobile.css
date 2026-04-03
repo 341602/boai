@@ -829,6 +829,12 @@ body.body--lyrics-open .app-root--mobile .app-brand {
   box-shadow: none;
 }
 
+.app-root--mobile .playlist-sidebar__item--fixed.playlist-sidebar__item--active,
+.app-root--mobile .playlist-sidebar__item--custom.playlist-sidebar__item--active {
+  border-color: rgba(30, 95, 88, 0.18);
+  background: rgba(255, 255, 255, 0.9);
+}
+
 .app-root--mobile .playlist-sidebar__mobile-icon {
   display: inline-flex;
   align-items: center;
@@ -956,6 +962,17 @@ body.body--lyrics-open .app-root--mobile .app-brand {
 
 .app-root--mobile .playlist-stage__actions .solid-button {
   min-width: 0;
+}
+
+.app-root--mobile .playlist-stage__actions .icon-button {
+  background: rgba(255, 255, 255, 0.74);
+  border-color: rgba(255, 255, 255, 0.46);
+  box-shadow: none;
+}
+
+.app-root--mobile .playlist-stage__actions .icon-button--solid {
+  background: rgba(30, 95, 88, 0.74);
+  border-color: rgba(30, 95, 88, 0.14);
 }
 
 .app-root--mobile .playlist-stage__list {
@@ -1138,6 +1155,14 @@ body.body--lyrics-open .app-root--mobile .app-brand {
   -webkit-backdrop-filter: blur(18px) saturate(110%);
 }
 
+.app-root--mobile .playlist-modal__header {
+  align-items: center;
+}
+
+.app-root--mobile .playlist-modal__header .icon-button {
+  flex-shrink: 0;
+}
+
 .app-root--mobile .modal-backdrop {
   padding: 12px 12px calc(var(--global-bar-height) + 18px + env(safe-area-inset-bottom, 0px));
   background: rgba(225, 232, 236, 0.88);
@@ -1159,6 +1184,23 @@ body.body--lyrics-open .app-root--mobile .app-brand {
 .app-root--mobile .playlist-modal__field input {
   background: rgba(255, 255, 255, 0.88);
   border-color: rgba(255, 255, 255, 0.54);
+}
+
+.app-root--mobile .playlist-modal__item {
+  min-height: 58px;
+  padding: 11px 12px;
+}
+
+.app-root--mobile .playlist-modal__item-action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  min-width: 28px;
+  height: 28px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.72);
+  color: var(--accent);
 }
 
 .app-root--mobile .empty-state--modal {
