@@ -1,6 +1,7 @@
 :root,
 html[data-theme='light'] {
   --app-max-width: 1180px;
+  --accent-rgb: 49, 120, 134;
   --page-bg: #dce4e7;
   --page-bg-top: #eef3f4;
   --page-radial-top-left: rgba(255, 255, 255, 0.78);
@@ -18,10 +19,10 @@ html[data-theme='light'] {
   --text-primary: #111827;
   --text-secondary: #667085;
   --text-tertiary: #98a2b3;
-  --accent: #1e5f58;
-  --accent-soft: rgba(30, 95, 88, 0.1);
-  --accent-glass: rgba(30, 95, 88, 0.18);
-  --accent-glass-strong: rgba(30, 95, 88, 0.5);
+  --accent: rgb(var(--accent-rgb));
+  --accent-soft: rgba(var(--accent-rgb), 0.1);
+  --accent-glass: rgba(var(--accent-rgb), 0.14);
+  --accent-glass-strong: rgba(var(--accent-rgb), 0.34);
   --danger: #b42318;
   --danger-soft: rgba(180, 35, 24, 0.08);
   --shadow-soft: 0 18px 40px rgba(15, 23, 42, 0.06);
@@ -48,6 +49,7 @@ html[data-theme='light'] {
 }
 
 html[data-theme='dark'] {
+  --accent-rgb: 121, 198, 206;
   --page-bg: #111827;
   --page-bg-top: #17202d;
   --page-radial-top-left: rgba(43, 64, 84, 0.42);
@@ -65,10 +67,10 @@ html[data-theme='dark'] {
   --text-primary: #e5e7eb;
   --text-secondary: #9ca3af;
   --text-tertiary: #6b7280;
-  --accent: #57a89d;
-  --accent-soft: rgba(87, 168, 157, 0.14);
-  --accent-glass: rgba(87, 168, 157, 0.18);
-  --accent-glass-strong: rgba(87, 168, 157, 0.42);
+  --accent: rgb(var(--accent-rgb));
+  --accent-soft: rgba(var(--accent-rgb), 0.14);
+  --accent-glass: rgba(var(--accent-rgb), 0.18);
+  --accent-glass-strong: rgba(var(--accent-rgb), 0.42);
   --danger: #f97066;
   --danger-soft: rgba(249, 112, 102, 0.14);
   --shadow-soft: 0 18px 36px rgba(2, 6, 23, 0.24);
@@ -329,7 +331,7 @@ a {
 }
 
 .nav-pill.router-link-active {
-  border-color: rgba(30, 95, 88, 0.16);
+  border-color: rgba(var(--accent-rgb), 0.16);
   background: var(--accent-glass);
   color: var(--accent);
   box-shadow:
@@ -345,7 +347,7 @@ a {
 
 .solid-button {
   border: 1px solid rgba(255, 255, 255, 0.24);
-  background: rgba(30, 95, 88, 0.74);
+  background: rgba(var(--accent-rgb), 0.68);
   color: #fff;
   box-shadow: var(--shadow-button-strong);
   backdrop-filter: blur(calc(var(--blur-strength) * 0.82)) saturate(124%);
@@ -387,13 +389,13 @@ a {
 
 .icon-button--solid {
   border-color: rgba(255, 255, 255, 0.24);
-  background: rgba(30, 95, 88, 0.74);
+  background: rgba(var(--accent-rgb), 0.68);
   color: #fff;
   box-shadow: var(--shadow-button-strong);
 }
 
 .icon-button--active {
-  border-color: rgba(30, 95, 88, 0.16);
+  border-color: rgba(var(--accent-rgb), 0.16);
   background: var(--accent-glass);
   color: var(--accent);
   box-shadow:
@@ -460,7 +462,7 @@ a {
 .playlist-modal__item:focus-visible {
   outline: none;
   box-shadow:
-    0 0 0 3px rgba(30, 95, 88, 0.12),
+    0 0 0 3px rgba(var(--accent-rgb), 0.12),
     inset 0 1px 0 rgba(255, 255, 255, 0.16);
 }
 
@@ -675,7 +677,7 @@ a {
 
 .track-row--active {
   border-color: transparent;
-  background: rgba(31, 109, 99, 0.08);
+  background: rgba(var(--accent-rgb), 0.08);
 }
 
 .track-row__main {
@@ -825,7 +827,7 @@ a {
 }
 
 .search-table__row--active {
-  background: rgba(31, 109, 99, 0.08);
+  background: rgba(var(--accent-rgb), 0.08);
 }
 
 .search-table__main {
@@ -1316,7 +1318,7 @@ a {
 .player-mode-option--active,
 .player-queue-row--active {
   border-color: transparent;
-  background: rgba(31, 109, 99, 0.08);
+  background: rgba(var(--accent-rgb), 0.08);
 }
 
 .player-mode-option__icon {
@@ -1606,7 +1608,7 @@ a {
 }
 
 .global-player__nav-action--active {
-  border-color: rgba(30, 95, 88, 0.16);
+  border-color: rgba(var(--accent-rgb), 0.16);
   background: var(--accent-glass);
   color: var(--accent);
 }
@@ -1712,7 +1714,7 @@ a {
 
 .playlist-sidebar__item--active {
   border-color: transparent;
-  background: rgba(31, 109, 99, 0.08);
+  background: rgba(var(--accent-rgb), 0.08);
 }
 
 .playlist-sidebar__item-meta {
@@ -1824,7 +1826,7 @@ a {
 
 .playlist-track-row--active {
   border-color: transparent;
-  background: rgba(31, 109, 99, 0.08);
+  background: rgba(var(--accent-rgb), 0.08);
 }
 
 .playlist-track-row__main {
@@ -1905,10 +1907,14 @@ a {
 .settings-layout {
   display: grid;
   gap: var(--space-4);
+  align-content: start;
 }
 
 .settings-section {
   min-height: 0;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.18), rgba(255, 255, 255, 0.08)),
+    rgba(250, 252, 253, 0.14);
 }
 
 .settings-section__header {
@@ -1930,7 +1936,9 @@ a {
   padding: 12px 14px;
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
-  background: rgba(255, 255, 255, 0.16);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.24), rgba(255, 255, 255, 0.1)),
+    rgba(255, 255, 255, 0.08);
   color: inherit;
   text-align: left;
   box-shadow: var(--shadow-button);
@@ -1944,8 +1952,13 @@ a {
 }
 
 .settings-choice--active {
-  border-color: rgba(30, 95, 88, 0.16);
-  background: rgba(30, 95, 88, 0.08);
+  border-color: rgba(var(--accent-rgb), 0.18);
+  background:
+    linear-gradient(180deg, rgba(var(--accent-rgb), 0.12), rgba(255, 255, 255, 0.12)),
+    rgba(255, 255, 255, 0.08);
+  box-shadow:
+    0 16px 30px rgba(15, 23, 42, 0.07),
+    inset 0 1px 0 rgba(255, 255, 255, 0.16);
 }
 
 .settings-choice__icon {
@@ -1955,7 +1968,7 @@ a {
   width: 34px;
   height: 34px;
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.22);
+  background: rgba(var(--accent-rgb), 0.1);
   color: var(--accent);
 }
 
@@ -1986,7 +1999,9 @@ a {
   padding: 12px 14px;
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
-  background: rgba(255, 255, 255, 0.16);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.2), rgba(255, 255, 255, 0.08)),
+    rgba(255, 255, 255, 0.08);
   box-shadow: var(--shadow-button);
 }
 
@@ -1995,7 +2010,15 @@ a {
 }
 
 .settings-row__value {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   flex-shrink: 0;
+  min-height: 30px;
+  padding: 0 12px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.16);
   color: var(--text-primary);
   font-size: 0.84rem;
   font-weight: 600;
@@ -2014,11 +2037,23 @@ html[data-theme='dark'] .settings-row {
 
 html[data-theme='dark'] .settings-choice,
 html[data-theme='dark'] .settings-row {
-  background: rgba(17, 24, 39, 0.44);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.04), rgba(17, 24, 39, 0.16)),
+    rgba(17, 24, 39, 0.5);
 }
 
 html[data-theme='dark'] .settings-choice__icon {
-  background: rgba(255, 255, 255, 0.08);
+  background: rgba(var(--accent-rgb), 0.12);
+}
+
+html[data-theme='dark'] .settings-choice--active {
+  background:
+    linear-gradient(180deg, rgba(var(--accent-rgb), 0.16), rgba(17, 24, 39, 0.22)),
+    rgba(17, 24, 39, 0.56);
+}
+
+html[data-theme='dark'] .settings-row__value {
+  background: rgba(255, 255, 255, 0.06);
 }
 
 .search-table::-webkit-scrollbar {

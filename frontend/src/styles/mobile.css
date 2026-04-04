@@ -203,7 +203,7 @@ body.body--lyrics-open .app-root--mobile .app-brand {
 
 .app-root--mobile .solid-button,
 .app-root--mobile .icon-button--solid {
-  background: rgba(30, 95, 88, 0.82);
+  background: rgba(var(--accent-rgb), 0.76);
 }
 
 .app-root--mobile .section-card__header {
@@ -836,7 +836,7 @@ body.body--lyrics-open .app-root--mobile .app-brand {
 
 .app-root--mobile .playlist-sidebar__item--fixed.playlist-sidebar__item--active,
 .app-root--mobile .playlist-sidebar__item--custom.playlist-sidebar__item--active {
-  border-color: rgba(30, 95, 88, 0.18);
+  border-color: rgba(var(--accent-rgb), 0.18);
   background: rgba(255, 255, 255, 0.9);
 }
 
@@ -873,8 +873,8 @@ body.body--lyrics-open .app-root--mobile .app-brand {
   min-width: 44px;
   min-height: 56px;
   border-radius: 12px;
-  background: rgba(30, 95, 88, 0.16);
-  border-color: rgba(30, 95, 88, 0.12);
+  background: rgba(var(--accent-rgb), 0.14);
+  border-color: rgba(var(--accent-rgb), 0.12);
   color: var(--accent);
   box-shadow: none;
 }
@@ -976,8 +976,8 @@ body.body--lyrics-open .app-root--mobile .app-brand {
 }
 
 .app-root--mobile .playlist-stage__actions .icon-button--solid {
-  background: rgba(30, 95, 88, 0.74);
-  border-color: rgba(30, 95, 88, 0.14);
+  background: rgba(var(--accent-rgb), 0.7);
+  border-color: rgba(var(--accent-rgb), 0.14);
 }
 
 .app-root--mobile .playlist-stage__list {
@@ -1009,7 +1009,7 @@ body.body--lyrics-open .app-root--mobile .app-brand {
   padding: 10px 8px;
   border-bottom-color: transparent;
   border-radius: 12px;
-  background: rgba(30, 95, 88, 0.08);
+  background: rgba(var(--accent-rgb), 0.08);
 }
 
 .app-root--mobile .playlist-track-row__main {
@@ -1054,7 +1054,9 @@ body.body--lyrics-open .app-root--mobile .app-brand {
 
 .app-root--mobile .settings-section {
   padding: 12px;
-  background: rgba(247, 250, 251, 0.56);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.18), rgba(255, 255, 255, 0.08)),
+    rgba(247, 250, 251, 0.42);
   border-color: rgba(255, 255, 255, 0.42);
   backdrop-filter: blur(12px) saturate(104%);
   -webkit-backdrop-filter: blur(12px) saturate(104%);
@@ -1063,7 +1065,9 @@ body.body--lyrics-open .app-root--mobile .app-brand {
 .app-root--mobile .settings-choice,
 .app-root--mobile .settings-row {
   padding: 11px 12px;
-  background: rgba(255, 255, 255, 0.74);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.22), rgba(255, 255, 255, 0.08)),
+    rgba(255, 255, 255, 0.54);
   border-color: rgba(255, 255, 255, 0.46);
   box-shadow: none;
 }
@@ -1071,7 +1075,7 @@ body.body--lyrics-open .app-root--mobile .app-brand {
 .app-root--mobile .settings-choice__icon {
   width: 30px;
   height: 30px;
-  background: rgba(255, 255, 255, 0.52);
+  background: rgba(var(--accent-rgb), 0.12);
 }
 
 .app-root--mobile .settings-choice__meta strong,
@@ -1294,8 +1298,8 @@ html[data-theme='dark'] .app-root--mobile .playlist-track-row__actions .icon-but
 html[data-theme='dark'] .app-root--mobile .solid-button,
 html[data-theme='dark'] .app-root--mobile .icon-button--solid,
 html[data-theme='dark'] .app-root--mobile .playlist-stage__actions .icon-button--solid {
-  background: rgba(30, 95, 88, 0.78);
-  border-color: rgba(87, 168, 157, 0.16);
+  background: rgba(var(--accent-rgb), 0.76);
+  border-color: rgba(var(--accent-rgb), 0.16);
 }
 
 html[data-theme='dark'] .app-root--mobile .player-screen__lyric-preview,
@@ -1328,8 +1332,8 @@ html[data-theme='dark'] .app-root--mobile .global-player {
 }
 
 html[data-theme='dark'] .app-root--mobile .playlist-sidebar__create-icon {
-  background: rgba(30, 95, 88, 0.22);
-  border-color: rgba(87, 168, 157, 0.16);
+  background: rgba(var(--accent-rgb), 0.2);
+  border-color: rgba(var(--accent-rgb), 0.16);
 }
 
 @media (min-width: 720px) and (max-width: 979px) {
