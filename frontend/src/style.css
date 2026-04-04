@@ -2,15 +2,15 @@
 html[data-theme='light'] {
   --app-max-width: 1180px;
   --accent-rgb: 49, 120, 134;
-  --page-bg: #dce4e7;
-  --page-bg-top: #eef3f4;
-  --page-radial-top-left: rgba(255, 255, 255, 0.78);
-  --page-radial-top-right: rgba(151, 165, 174, 0.38);
-  --page-radial-bottom-left: rgba(193, 205, 212, 0.38);
-  --page-radial-bottom-right: rgba(173, 187, 194, 0.18);
-  --page-overlay-top-left: rgba(255, 255, 255, 0.54);
-  --page-overlay-top-right: rgba(176, 188, 196, 0.28);
-  --page-overlay-glow: rgba(255, 255, 255, 0.18);
+  --page-bg: #e7edf1;
+  --page-bg-top: #f8fbfc;
+  --page-radial-top-left: rgba(255, 255, 255, 0.94);
+  --page-radial-top-right: rgba(136, 160, 177, 0.18);
+  --page-radial-bottom-left: rgba(181, 197, 208, 0.2);
+  --page-radial-bottom-right: rgba(210, 219, 226, 0.1);
+  --page-overlay-top-left: rgba(255, 255, 255, 0.68);
+  --page-overlay-top-right: rgba(152, 178, 193, 0.16);
+  --page-overlay-glow: rgba(190, 206, 216, 0.24);
   --surface: rgba(251, 252, 253, 0.18);
   --surface-strong: rgba(251, 252, 253, 0.24);
   --surface-muted: rgba(251, 252, 253, 0.12);
@@ -50,15 +50,15 @@ html[data-theme='light'] {
 
 html[data-theme='dark'] {
   --accent-rgb: 121, 198, 206;
-  --page-bg: #111827;
-  --page-bg-top: #17202d;
-  --page-radial-top-left: rgba(43, 64, 84, 0.42);
-  --page-radial-top-right: rgba(34, 197, 184, 0.08);
-  --page-radial-bottom-left: rgba(59, 130, 246, 0.08);
-  --page-radial-bottom-right: rgba(17, 24, 39, 0.18);
-  --page-overlay-top-left: rgba(30, 41, 59, 0.34);
-  --page-overlay-top-right: rgba(20, 184, 166, 0.08);
-  --page-overlay-glow: rgba(15, 23, 42, 0.28);
+  --page-bg: #0f1722;
+  --page-bg-top: #121d29;
+  --page-radial-top-left: rgba(42, 60, 78, 0.46);
+  --page-radial-top-right: rgba(88, 161, 182, 0.12);
+  --page-radial-bottom-left: rgba(64, 90, 120, 0.16);
+  --page-radial-bottom-right: rgba(15, 23, 34, 0.18);
+  --page-overlay-top-left: rgba(31, 44, 58, 0.42);
+  --page-overlay-top-right: rgba(96, 189, 201, 0.08);
+  --page-overlay-glow: rgba(20, 32, 46, 0.34);
   --surface: rgba(15, 23, 42, 0.22);
   --surface-strong: rgba(15, 23, 42, 0.28);
   --surface-muted: rgba(30, 41, 59, 0.16);
@@ -134,10 +134,11 @@ a {
   position: relative;
   isolation: isolate;
   background:
-    radial-gradient(circle at 14% 12%, var(--page-radial-top-left), transparent 24%),
-    radial-gradient(circle at 86% 14%, var(--page-radial-top-right), transparent 26%),
-    radial-gradient(circle at 20% 78%, var(--page-radial-bottom-left), transparent 28%),
-    radial-gradient(circle at 72% 72%, var(--page-radial-bottom-right), transparent 24%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.42), rgba(255, 255, 255, 0) 18%),
+    radial-gradient(120% 88% at 8% -4%, var(--page-radial-top-left), transparent 46%),
+    radial-gradient(92% 74% at 100% 8%, var(--page-radial-top-right), transparent 40%),
+    radial-gradient(86% 84% at 18% 100%, var(--page-radial-bottom-left), transparent 42%),
+    radial-gradient(72% 72% at 84% 78%, var(--page-radial-bottom-right), transparent 38%),
     linear-gradient(180deg, var(--page-bg-top) 0%, var(--page-bg) 100%);
 }
 
@@ -152,21 +153,23 @@ a {
 
 .app-root::before {
   background:
-    radial-gradient(circle at 22% 22%, var(--page-overlay-top-left), transparent 30%),
-    radial-gradient(circle at 74% 18%, var(--page-overlay-top-right), transparent 30%);
-  filter: blur(64px);
-  opacity: 0.92;
+    radial-gradient(40% 34% at 18% 16%, var(--page-overlay-top-left), transparent 70%),
+    radial-gradient(34% 30% at 82% 12%, var(--page-overlay-top-right), transparent 70%),
+    linear-gradient(135deg, rgba(255, 255, 255, 0.16), transparent 38%);
+  filter: blur(76px);
+  opacity: 0.88;
 }
 
 .app-root::after {
   inset: auto;
-  bottom: 6vh;
-  left: 8vw;
-  width: 360px;
-  height: 360px;
+  top: 18vh;
+  right: 8vw;
+  width: 420px;
+  height: 420px;
   border-radius: 999px;
   background: var(--page-overlay-glow);
-  filter: blur(120px);
+  filter: blur(142px);
+  opacity: 0.82;
 }
 
 .app-root--with-bar {
