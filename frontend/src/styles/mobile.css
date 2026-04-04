@@ -20,7 +20,7 @@
   bottom: 14vh;
   width: 240px;
   height: 240px;
-  background: rgba(255, 255, 255, 0.16);
+  background: var(--page-overlay-glow);
   filter: blur(92px);
 }
 
@@ -1248,6 +1248,88 @@ body.body--lyrics-open .app-root--mobile .app-brand {
 .app-root--mobile .empty-state--modal {
   background: rgba(255, 255, 255, 0.76);
   border-color: rgba(255, 255, 255, 0.5);
+}
+
+html[data-theme='dark'] .app-root--mobile .page-header::before,
+html[data-theme='dark'] .app-root--mobile .hero-panel,
+html[data-theme='dark'] .app-root--mobile .section-card,
+html[data-theme='dark'] .app-root--mobile .playlist-sidebar,
+html[data-theme='dark'] .app-root--mobile .playlist-stage,
+html[data-theme='dark'] .app-root--mobile .player-screen,
+html[data-theme='dark'] .app-root--mobile .settings-section {
+  background: rgba(17, 24, 39, 0.46);
+  border-color: rgba(255, 255, 255, 0.12);
+}
+
+html[data-theme='dark'] .app-root--mobile .search-bar__field,
+html[data-theme='dark'] .app-root--mobile .search-table,
+html[data-theme='dark'] .app-root--mobile .search-table__row,
+html[data-theme='dark'] .app-root--mobile .track-row,
+html[data-theme='dark'] .app-root--mobile .playlist-track-row,
+html[data-theme='dark'] .app-root--mobile .playlist-sidebar__item,
+html[data-theme='dark'] .app-root--mobile .playlist-modal__item,
+html[data-theme='dark'] .app-root--mobile .recent-searches__item,
+html[data-theme='dark'] .app-root--mobile .settings-choice,
+html[data-theme='dark'] .app-root--mobile .settings-row {
+  background: rgba(15, 23, 42, 0.56);
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+html[data-theme='dark'] .app-root--mobile .icon-button,
+html[data-theme='dark'] .app-root--mobile .nav-pill,
+html[data-theme='dark'] .app-root--mobile .plain-button,
+html[data-theme='dark'] .app-root--mobile .global-player__nav-action,
+html[data-theme='dark'] .app-root--mobile .playlist-modal__item-action,
+html[data-theme='dark'] .app-root--mobile .player-panel .icon-button,
+html[data-theme='dark'] .app-root--mobile .playlist-modal .icon-button,
+html[data-theme='dark'] .app-root--mobile .confirm-dialog .icon-button,
+html[data-theme='dark'] .app-root--mobile .playlist-modal .plain-button,
+html[data-theme='dark'] .app-root--mobile .confirm-dialog .plain-button,
+html[data-theme='dark'] .app-root--mobile .playlist-stage__actions .icon-button,
+html[data-theme='dark'] .app-root--mobile .playlist-track-row__actions .icon-button {
+  background: rgba(15, 23, 42, 0.7);
+  border-color: rgba(255, 255, 255, 0.12);
+}
+
+html[data-theme='dark'] .app-root--mobile .solid-button,
+html[data-theme='dark'] .app-root--mobile .icon-button--solid,
+html[data-theme='dark'] .app-root--mobile .playlist-stage__actions .icon-button--solid {
+  background: rgba(30, 95, 88, 0.78);
+  border-color: rgba(87, 168, 157, 0.16);
+}
+
+html[data-theme='dark'] .app-root--mobile .player-screen__lyric-preview,
+html[data-theme='dark'] .app-root--mobile .player-mobile-lyrics__panel,
+html[data-theme='dark'] .app-root--mobile .player-mobile-lyrics__header,
+html[data-theme='dark'] .app-root--mobile .player-mobile-lyrics__body,
+html[data-theme='dark'] .app-root--mobile .player-panel,
+html[data-theme='dark'] .app-root--mobile .playlist-modal,
+html[data-theme='dark'] .app-root--mobile .confirm-dialog,
+html[data-theme='dark'] .app-root--mobile .player-mode-list,
+html[data-theme='dark'] .app-root--mobile .player-queue-list,
+html[data-theme='dark'] .app-root--mobile .playlist-modal__create,
+html[data-theme='dark'] .app-root--mobile .playlist-modal__list,
+html[data-theme='dark'] .app-root--mobile .playlist-modal__field input,
+html[data-theme='dark'] .app-root--mobile .empty-state--modal,
+html[data-theme='dark'] .app-root--mobile .playlist-sidebar__mobile-empty {
+  background: rgba(15, 23, 42, 0.72);
+  border-color: rgba(255, 255, 255, 0.12);
+}
+
+html[data-theme='dark'] .app-root--mobile .modal-backdrop,
+html[data-theme='dark'] .app-root--mobile .player-panel-overlay,
+html[data-theme='dark'] .app-root--mobile .player-mobile-lyrics__backdrop {
+  background: rgba(3, 7, 18, 0.7);
+}
+
+html[data-theme='dark'] .app-root--mobile .global-player {
+  background: rgba(15, 23, 42, 0.82);
+  border-color: rgba(255, 255, 255, 0.12);
+}
+
+html[data-theme='dark'] .app-root--mobile .playlist-sidebar__create-icon {
+  background: rgba(30, 95, 88, 0.22);
+  border-color: rgba(87, 168, 157, 0.16);
 }
 
 @media (min-width: 720px) and (max-width: 979px) {
