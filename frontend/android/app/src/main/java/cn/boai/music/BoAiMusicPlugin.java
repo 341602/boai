@@ -70,8 +70,10 @@ public class BoAiMusicPlugin extends Plugin {
         String title = call.getString("title", "BoAi Music");
         String artist = call.getString("artist", "");
         boolean isPlaying = call.getBoolean("isPlaying", false);
+        boolean hasPrevious = call.getBoolean("hasPrevious", false);
+        boolean hasNext = call.getBoolean("hasNext", false);
 
-        updateNowPlayingInternal(title, artist, isPlaying);
+        updateNowPlayingInternal(title, artist, isPlaying, hasPrevious, hasNext);
         call.resolve();
     }
 
@@ -110,7 +112,13 @@ public class BoAiMusicPlugin extends Plugin {
         }
     }
 
-    private void updateNowPlayingInternal(String title, String artist, boolean isPlaying) {
+    private void updateNowPlayingInternal(
+        String title,
+        String artist,
+        boolean isPlaying,
+        boolean hasPrevious,
+        boolean hasNext
+    ) {
         if (title == null || title.trim().isEmpty()) {
             title = "BoAi Music";
         }
@@ -120,13 +128,19 @@ public class BoAiMusicPlugin extends Plugin {
             long playbackActions =
                 PlaybackStateCompat.ACTION_PLAY |
                 PlaybackStateCompat.ACTION_PAUSE |
-                PlaybackStateCompat.ACTION_PLAY_PAUSE |
-                PlaybackStateCompat.ACTION_SKIP_TO_PREVIOUS |
-                PlaybackStateCompat.ACTION_SKIP_TO_NEXT;
+                PlaybackStateCompat.ACTION_PLAY_PAUSE;
+
+            if (hasPrevious) {
+                playbackActions |= PlaybackStateCompat.ACTION_SKIP_TO_PREVIOUS;
+            }
+
+            if (hasNext) {
+                playbackActions |= PlaybackStateCompat.ACTION_SKIP_TO_NEXT;
+            }
 
             mediaSession.setPlaybackState(
                 new PlaybackStateCompat.Builder()
-                    .setState(playbackState, PlaybackStateCompat.PLAYBACK_POSITION_UNKNOWN, 1f)
+                    .setState(playbackState, PlaybackStateCompat.PLAYBACK_POSITION_UNKNOWN, isPlaying ? 1f : 0f)
                     .setActions(playbackActions)
                     .build()
             );
@@ -148,19 +162,40 @@ public class BoAiMusicPlugin extends Plugin {
             .setSilent(true)
             .setPriority(NotificationCompat.PRIORITY_LOW)
             .setOngoing(isPlaying)
-            .setContentIntent(buildContentIntent())
-            .addAction(android.R.drawable.ic_media_previous, "Previous", buildActionIntent(ACTION_PREVIOUS, 101))
-            .addAction(
-                isPlaying ? android.R.drawable.ic_media_pause : android.R.drawable.ic_media_play,
-                isPlaying ? "Pause" : "Play",
-                buildActionIntent(ACTION_TOGGLE, 102)
-            )
-            .addAction(android.R.drawable.ic_media_next, "Next", buildActionIntent(ACTION_NEXT, 103))
-            .setStyle(
-                new androidx.media.app.NotificationCompat.MediaStyle()
-                    .setMediaSession(mediaSession != null ? mediaSession.getSessionToken() : null)
-                    .setShowActionsInCompactView(0, 1, 2)
-            );
+            .setContentIntent(buildContentIntent());
+
+        int compactActionCount = 0;
+        int[] compactActions = new int[3];
+
+        if (hasPrevious) {
+            builder.addAction(android.R.drawable.ic_media_previous, "Previous", buildActionIntent(ACTION_PREVIOUS, 101));
+            compactActions[compactActionCount++] = 0;
+        }
+
+        int toggleActionIndex = compactActionCount;
+        builder.addAction(
+            isPlaying ? android.R.drawable.ic_media_pause : android.R.drawable.ic_media_play,
+            isPlaying ? "Pause" : "Play",
+            buildActionIntent(ACTION_TOGGLE, 102)
+        );
+        compactActions[compactActionCount++] = toggleActionIndex;
+
+        if (hasNext) {
+            builder.addAction(android.R.drawable.ic_media_next, "Next", buildActionIntent(ACTION_NEXT, 103));
+            compactActions[compactActionCount++] = toggleActionIndex + 1;
+        }
+
+        androidx.media.app.NotificationCompat.MediaStyle mediaStyle =
+            new androidx.media.app.NotificationCompat.MediaStyle()
+                .setMediaSession(mediaSession != null ? mediaSession.getSessionToken() : null);
+
+        if (compactActionCount > 0) {
+            int[] compactViewActions = new int[compactActionCount];
+            System.arraycopy(compactActions, 0, compactViewActions, 0, compactActionCount);
+            mediaStyle.setShowActionsInCompactView(compactViewActions);
+        }
+
+        builder.setStyle(mediaStyle);
 
         notificationManager.notify(NOTIFICATION_ID, builder.build());
     }

@@ -861,6 +861,22 @@ function handleAudioError() {
   setError(TEXTS.playFailed)
 }
 
+function getNativeNotificationActionState() {
+  const queueLength = state.currentQueue.length
+  const hasMultipleTracks = queueLength > 1
+  const isOrderMode = state.playbackMode === PLAYBACK_MODES.order
+
+  return {
+    hasPrevious:
+      state.currentTime > 3 ||
+      (isOrderMode ? state.currentIndex > 0 : hasMultipleTracks),
+    hasNext:
+      isOrderMode
+        ? state.currentIndex >= 0 && state.currentIndex < queueLength - 1
+        : hasMultipleTracks,
+  }
+}
+
 async function handleAudioEnded() {
   state.isPlaying = false
 
@@ -1016,18 +1032,28 @@ watch(
 )
 
 watch(
-  () => [state.currentSong?.cid, state.currentSong?.name, state.isPlaying, state.currentIndex, state.currentQueue.length],
+  () => [
+    state.currentSong?.cid,
+    state.currentSong?.name,
+    state.isPlaying,
+    state.currentIndex,
+    state.currentQueue.length,
+    state.currentTime,
+    state.playbackMode,
+  ],
   () => {
     if (!state.currentSong?.cid) {
       void clearNativePlayerNotification()
       return
     }
 
+    const { hasPrevious, hasNext } = getNativeNotificationActionState()
+
     void updateNativePlayerNotification({
       currentSong: state.currentSong,
       isPlaying: state.isPlaying,
-      hasPrevious: state.currentQueue.length > 1,
-      hasNext: state.currentQueue.length > 1,
+      hasPrevious,
+      hasNext,
     })
   },
   { immediate: true },
