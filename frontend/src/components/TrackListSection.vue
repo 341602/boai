@@ -1,6 +1,7 @@
 <script setup>
 import { computed } from 'vue'
 import { Heart, ListPlus, Trash2 } from 'lucide-vue-next'
+import MarqueeText from './MarqueeText.vue'
 import { TEXTS } from '../constants/texts'
 import { formatAlbum, formatArtists, getTrackInitial } from '../utils/track'
 
@@ -91,8 +92,8 @@ function favoriteState(song) {
           </div>
 
           <div class="track-row__meta">
-            <strong>{{ song.name }}</strong>
-            <p>{{ formatArtists(song) }}</p>
+            <MarqueeText tag="strong" :text="song.name" />
+            <MarqueeText tag="p" :text="formatArtists(song)" />
             <p>{{ formatAlbum(song) }}</p>
           </div>
         </button>

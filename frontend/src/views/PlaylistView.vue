@@ -3,6 +3,7 @@ import { computed, ref, watch } from 'vue'
 import { Clock3, Disc3, FolderPlus, Heart, House, ListPlus, Play, Settings2, Trash2 } from 'lucide-vue-next'
 import { useRouter } from 'vue-router'
 import ConfirmDialog from '../components/ConfirmDialog.vue'
+import MarqueeText from '../components/MarqueeText.vue'
 import PlaylistCreateDialog from '../components/PlaylistCreateDialog.vue'
 import PlaylistPickerModal from '../components/PlaylistPickerModal.vue'
 import { useViewportMode } from '../composables/useViewportMode'
@@ -431,8 +432,8 @@ function favoriteLabel(song) {
               </div>
 
               <div class="playlist-track-row__meta">
-                <strong>{{ song.name }}</strong>
-                <p>{{ formatArtists(song) }}</p>
+                <MarqueeText tag="strong" :text="song.name" />
+                <MarqueeText tag="p" :text="formatArtists(song)" />
                 <p>{{ formatAlbum(song) }}</p>
               </div>
             </button>

@@ -1,6 +1,7 @@
 <script setup>
 import { ref, watch } from 'vue'
 import { Check, ListPlus, X } from 'lucide-vue-next'
+import MarqueeText from './MarqueeText.vue'
 import { TEXTS } from '../constants/texts'
 
 const props = defineProps({
@@ -50,7 +51,7 @@ function submitCreate() {
         <header class="playlist-modal__header">
           <div>
             <h2>{{ TEXTS.playlistPickerTitle }}</h2>
-            <p>{{ song?.name || TEXTS.noSongSelected }}</p>
+            <MarqueeText tag="p" :text="song?.name || TEXTS.noSongSelected" />
           </div>
           <button class="icon-button" type="button" :title="TEXTS.close" :aria-label="TEXTS.close" @click="emit('close')">
             <X class="button-icon" />

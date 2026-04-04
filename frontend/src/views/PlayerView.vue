@@ -3,6 +3,7 @@ import { computed, onBeforeUnmount, ref, watch } from 'vue'
 import { ArrowDownToLine, ArrowDownUp, ArrowLeft, Check, Heart, House, ListMusic, ListPlus, Repeat1, Settings2, Shuffle, Trash2, X } from 'lucide-vue-next'
 import { useRouter } from 'vue-router'
 import LyricDisplay from '../components/LyricDisplay.vue'
+import MarqueeText from '../components/MarqueeText.vue'
 import PlaylistPickerModal from '../components/PlaylistPickerModal.vue'
 import { useViewportMode } from '../composables/useViewportMode'
 import { TEXTS } from '../constants/texts'
@@ -332,8 +333,8 @@ onBeforeUnmount(() => {
             </div>
 
             <div class="player-screen__meta">
-              <h1>{{ currentSong.name }}</h1>
-              <p>{{ formatArtists(currentSong) }}</p>
+              <MarqueeText tag="h1" :text="currentSong.name" />
+              <MarqueeText tag="p" :text="formatArtists(currentSong)" />
             </div>
           </div>
 
@@ -446,8 +447,8 @@ onBeforeUnmount(() => {
               </div>
 
               <div class="player-queue-row__meta">
-                <strong>{{ song.name }}</strong>
-                <p>{{ formatArtists(song) }}</p>
+                <MarqueeText tag="strong" :text="song.name" />
+                <MarqueeText tag="p" :text="formatArtists(song)" />
               </div>
             </button>
 
@@ -482,8 +483,8 @@ onBeforeUnmount(() => {
       <section class="surface player-mobile-lyrics__panel" @click.stop>
         <header class="player-mobile-lyrics__header" @click="closeMobileLyrics">
           <div class="player-mobile-lyrics__meta">
-            <strong>{{ currentSong?.name }}</strong>
-            <p>{{ currentSong ? formatArtists(currentSong) : '' }}</p>
+            <MarqueeText tag="strong" :text="currentSong?.name || ''" />
+            <MarqueeText tag="p" :text="currentSong ? formatArtists(currentSong) : ''" />
           </div>
           <button class="icon-button" type="button" :title="TEXTS.close" :aria-label="TEXTS.close" @click.stop="closeMobileLyrics">
             <X class="button-icon" />

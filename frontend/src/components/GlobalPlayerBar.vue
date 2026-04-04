@@ -1,6 +1,7 @@
 <script setup>
 import { computed, ref } from 'vue'
 import { House, ListMusic, Pause, Play, Settings2, SkipBack, SkipForward } from 'lucide-vue-next'
+import MarqueeText from './MarqueeText.vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useViewportMode } from '../composables/useViewportMode'
 import { TEXTS } from '../constants/texts'
@@ -150,8 +151,12 @@ function handleTouchEnd(event) {
 
       <button class="global-player__track" type="button" @click="openPlayer">
         <div class="global-player__meta">
-          <strong>{{ player.currentSong.value?.name || TEXTS.notPlaying }}</strong>
-          <p v-if="player.currentSong.value">{{ formatArtists(player.currentSong.value) }}</p>
+          <MarqueeText tag="strong" :text="player.currentSong.value?.name || TEXTS.notPlaying" />
+          <MarqueeText
+            v-if="player.currentSong.value"
+            tag="p"
+            :text="formatArtists(player.currentSong.value)"
+          />
         </div>
       </button>
 
@@ -216,8 +221,12 @@ function handleTouchEnd(event) {
 
           <button class="global-player__track" type="button" @click="openPlayer">
             <div class="global-player__meta">
-              <strong>{{ player.currentSong.value?.name || TEXTS.notPlaying }}</strong>
-              <p v-if="player.currentSong.value">{{ formatArtists(player.currentSong.value) }}</p>
+              <MarqueeText tag="strong" :text="player.currentSong.value?.name || TEXTS.notPlaying" />
+              <MarqueeText
+                v-if="player.currentSong.value"
+                tag="p"
+                :text="formatArtists(player.currentSong.value)"
+              />
             </div>
           </button>
 

@@ -2,6 +2,7 @@
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { Heart, History, House, ListMusic, ListPlus, Settings2, Trash2, X } from 'lucide-vue-next'
 import { useRouter } from 'vue-router'
+import MarqueeText from '../components/MarqueeText.vue'
 import PlaylistPickerModal from '../components/PlaylistPickerModal.vue'
 import SearchBar from '../components/SearchBar.vue'
 import { useViewportMode } from '../composables/useViewportMode'
@@ -386,12 +387,12 @@ onBeforeUnmount(() => {
                 {{ getTrackInitial(song) }}
               </div>
               <div class="search-table__title">
-                <strong>{{ song.name }}</strong>
-                <p>{{ formatArtists(song) }}</p>
+                <MarqueeText tag="strong" :text="song.name" />
+                <MarqueeText tag="p" :text="formatArtists(song)" />
               </div>
             </div>
 
-            <span class="search-table__artist">{{ formatArtists(song) }}</span>
+            <MarqueeText tag="span" class="search-table__artist" :text="formatArtists(song)" />
             <span class="search-table__album">{{ formatAlbum(song) }}</span>
           </button>
 
