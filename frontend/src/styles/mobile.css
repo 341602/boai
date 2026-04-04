@@ -28,6 +28,11 @@
   padding-bottom: calc(var(--global-bar-height) + 18px + env(safe-area-inset-bottom, 0px));
 }
 
+/* 移动端播放页时移除底部 padding，确保全屏 */
+.app-root--mobile.app-root--with-bar:has(.page-shell--player) {
+  padding-bottom: 0;
+}
+
 .app-root--mobile .app-brand {
   top: calc(12px + env(safe-area-inset-top, 0px));
   left: 12px;
@@ -80,6 +85,20 @@ body.body--lyrics-open .app-root--mobile .global-player {
   padding: 0;
   overflow: hidden;
   z-index: 30;
+}
+
+.app-root--mobile .page-shell--player .page-header {
+  position: sticky;
+  top: 0;
+  z-index: 8;
+  display: grid;
+  gap: 0;
+  margin: 0;
+  padding: 2px 2px 0;
+}
+
+.app-root--mobile .page-shell--player .page-header::before {
+  display: none;
 }
 
 .app-root--mobile .page-header {
@@ -560,6 +579,11 @@ body.body--lyrics-open .app-root--mobile .global-player {
   padding: 0;
 }
 
+/* 黑胶模式下禁止滚动 */
+.app-root--mobile .player-screen--vinyl .player-screen__body {
+  overflow-y: hidden;
+}
+
 .app-root--mobile .player-screen__side {
   display: flex;
   flex-direction: column;
@@ -579,16 +603,16 @@ body.body--lyrics-open .app-root--mobile .global-player {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: min(280px, 68vw);
-  height: min(280px, 68vw);
-  margin: 20px auto 0;
+  width: min(300px, 72vw);
+  height: min(300px, 72vw);
+  margin: 24px auto 0;
 }
 
 /* ===== 唱针 TONEARM ===== */
 .app-root--mobile .player-screen__tonearm {
   position: absolute;
-  top: -8px;
-  right: -18px;
+  top: -10px;
+  right: -22px;
   z-index: 10;
   transform-origin: 78% 86%;
   transform: rotate(-32deg);
@@ -596,43 +620,28 @@ body.body--lyrics-open .app-root--mobile .global-player {
 }
 
 .app-root--mobile .player-screen__tonearm--playing {
-  transform: rotate(-4deg);
+  transform: rotate(-5deg);
 }
 
 .app-root--mobile .player-screen__tonearm__arm {
-  width: 78px;
-  height: 6px;
-  border-radius: 3px;
-  background: linear-gradient(
-    175deg,
-    rgba(220, 205, 185, 0.95) 0%,
-    rgba(180, 155, 120, 0.9) 50%,
-    rgba(130, 105, 75, 0.88) 100%
-  );
+  width: 92px;
+  height: 7px;
+  border-radius: 3.5px;
+  background: rgba(255, 255, 255, 0.92);
   transform: rotate(34deg);
   transform-origin: 90% center;
-  box-shadow:
-    0 2px 6px rgba(0, 0, 0, 0.3),
-    inset 0 1px 0 rgba(255, 255, 255, 0.35),
-    inset 0 -1px 0 rgba(0, 0, 0, 0.15);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
 }
 
 .app-root--mobile .player-screen__tonearm__head {
   position: absolute;
-  bottom: -3px;
-  left: -3px;
-  width: 10px;
-  height: 14px;
-  border-radius: 2px 2px 5px 5px;
-  background: linear-gradient(
-    170deg,
-    rgba(235, 225, 210, 0.95) 0%,
-    rgba(190, 165, 130, 0.9) 60%,
-    rgba(120, 95, 65, 0.85) 100%
-  );
-  box-shadow:
-    0 1px 4px rgba(0, 0, 0, 0.28),
-    inset 0 1px 0 rgba(255, 255, 255, 0.35);
+  bottom: -4px;
+  left: -4px;
+  width: 12px;
+  height: 16px;
+  border-radius: 2px 2px 6px 6px;
+  background: rgba(255, 255, 255, 0.9);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.18);
   transform: rotate(34deg);
   transform-origin: top center;
 }
@@ -641,19 +650,13 @@ body.body--lyrics-open .app-root--mobile .global-player {
 .app-root--mobile .player-screen__tonearm::before {
   content: '';
   position: absolute;
-  bottom: -12px;
-  left: 10px;
-  width: 16px;
-  height: 16px;
+  bottom: -14px;
+  left: 12px;
+  width: 20px;
+  height: 20px;
   border-radius: 50%;
-  background: radial-gradient(
-    circle at 42% 38%,
-    rgba(200, 180, 150, 0.45) 0%,
-    transparent 55%
-  ), linear-gradient(145deg, rgba(160, 138, 108, 0.85), rgba(88, 68, 44, 0.9));
-  box-shadow:
-    0 2px 6px rgba(0, 0, 0, 0.28),
-    inset 0 1px 1px rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.88);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
 }
 
 /* ===== 黑胶唱片 VINYL RECORD ===== */
@@ -663,20 +666,19 @@ body.body--lyrics-open .app-root--mobile .global-player {
   height: 100%;
   border-radius: 50%;
   background:
-    radial-gradient(circle at 50% 50%, transparent 27%, rgba(255, 255, 255, 0.04) 28%, transparent 29%),
-    radial-gradient(circle at 50% 50%, transparent 41%, rgba(255, 255, 255, 0.03) 42%, transparent 43%),
-    radial-gradient(circle at 50% 50%, transparent 55%, rgba(255, 255, 255, 0.04) 56%, transparent 57%),
-    radial-gradient(circle at 50% 50%, transparent 69%, rgba(255, 255, 255, 0.025) 70%, transparent 71%),
-    radial-gradient(circle at 50% 50%, transparent 82%, rgba(255, 255, 255, 0.035) 83%, transparent 84%),
-    repeating-radial-gradient(circle at 50% 50%, transparent 0, transparent 1.6px, rgba(255, 255, 255, 0.035) 1.7px, transparent 2.1px),
-    linear-gradient(160deg, rgba(60, 54, 48, 0.92) 0%, rgba(32, 28, 24, 0.96) 50%, rgba(48, 42, 36, 0.93) 100%);
+    radial-gradient(circle at 50% 50%, transparent 27%, rgba(255, 255, 255, 0.15) 28%, transparent 29%),
+    radial-gradient(circle at 50% 50%, transparent 55%, rgba(255, 255, 255, 0.12) 56%, transparent 57%),
+    radial-gradient(circle at 50% 50%, transparent 82%, rgba(255, 255, 255, 0.14) 83%, transparent 84%),
+    repeating-radial-gradient(circle at 50% 50%, transparent 0, transparent 1.6px, rgba(255, 255, 255, 0.12) 1.7px, transparent 2.1px),
+    rgba(255, 255, 255, 0.16);
+  backdrop-filter: blur(10px) saturate(120%) brightness(1.0);
+  -webkit-backdrop-filter: blur(10px) saturate(120%) brightness(1.0);
   box-shadow:
-    0 0 0 1.5px rgba(120, 105, 85, 0.2),
-    0 0 0 0.5px rgba(0, 0, 0, 0.3),
-    0 12px 40px rgba(0, 0, 0, 0.45),
-    0 4px 12px rgba(0, 0, 0, 0.25),
-    inset 0 2px 4px rgba(255, 255, 255, 0.06),
-    inset 0 0 30px rgba(0, 0, 0, 0.35);
+    0 0 0 1.5px rgba(255, 255, 255, 0.2),
+    0 12px 40px rgba(0, 0, 0, 0.35),
+    0 4px 12px rgba(0, 0, 0, 0.2),
+    inset 0 2px 4px rgba(255, 255, 255, 0.15),
+    inset 0 0 30px rgba(0, 0, 0, 0.1);
   animation: vinyl-spin 8s linear infinite;
   animation-play-state: paused;
 }
@@ -707,12 +709,12 @@ body.body--lyrics-open .app-root--mobile .global-player {
   transform: translate(-50%, -50%);
   border-radius: 50%;
   overflow: hidden;
-  background: linear-gradient(145deg, rgba(45, 40, 35, 0.7), rgba(25, 22, 19, 0.85));
+  background: rgba(255, 255, 255, 0.12);
   box-shadow:
-    0 0 0 2px rgba(160, 142, 115, 0.18),
-    0 0 16px rgba(0, 0, 0, 0.2),
-    inset 0 1px 2px rgba(255, 255, 255, 0.05),
-    inset 0 0 8px rgba(0, 0, 0, 0.3);
+    0 0 0 2px rgba(255, 255, 255, 0.18),
+    0 0 16px rgba(0, 0, 0, 0.15),
+    inset 0 1px 2px rgba(255, 255, 255, 0.15),
+    inset 0 0 8px rgba(0, 0, 0, 0.1);
 }
 
 .app-root--mobile .player-screen__vinyl__cover {
@@ -747,11 +749,11 @@ body.body--lyrics-open .app-root--mobile .global-player {
   transform: translate(-50%, -50%);
   border-radius: 50%;
   background:
-    radial-gradient(circle at 38% 36%, rgba(170, 155, 130, 0.3), transparent 55%),
-    linear-gradient(145deg, rgba(18, 15, 12, 0.94), rgba(38, 33, 28, 0.97));
+    radial-gradient(circle at 38% 36%, rgba(255, 255, 255, 0.3), transparent 55%),
+    linear-gradient(145deg, rgba(220, 220, 220, 0.94), rgba(200, 200, 200, 0.97));
   box-shadow:
-    inset 0 1px 2px rgba(0, 0, 0, 0.55),
-    0 1px 1px rgba(200, 185, 160, 0.1);
+    inset 0 1px 2px rgba(0, 0, 0, 0.25),
+    0 1px 1px rgba(255, 255, 255, 0.1);
   z-index: 3;
 }
 
@@ -764,13 +766,13 @@ body.body--lyrics-open .app-root--mobile .global-player {
   height: 24%;
   transform: translate(-50%, -50%);
   border-radius: 50%;
-  background: rgba(0, 0, 0, 0.55);
-  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.7);
+  background: rgba(0, 0, 0, 0.25);
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.35);
 }
 
 /* ===== 歌曲 META 信息 ===== */
 .app-root--mobile .player-screen__meta--vinyl {
-  margin-top: 18px;
+  margin-top: 22px;
   padding: 0 4px;
   text-align: center;
 }
@@ -847,6 +849,7 @@ body.body--lyrics-open .app-root--mobile .global-player {
   justify-content: center;
   gap: 6px;
   width: 100%;
+  height: 140px;
   margin-top: 16px;
   padding: 12px 0;
   border: none;
@@ -856,6 +859,7 @@ body.body--lyrics-open .app-root--mobile .global-player {
   box-shadow: none;
   border-radius: 0;
   text-align: center;
+  flex-shrink: 0;
 }
 
 .app-root--mobile .player-screen__lyric-preview-line {
@@ -891,9 +895,9 @@ body.body--lyrics-open .app-root--mobile .global-player {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 14px;
+  gap: 18px;
   width: 100%;
-  padding: 20px 28px calc(24px + env(safe-area-inset-bottom, 0px));
+  padding: 24px 28px calc(28px + env(safe-area-inset-bottom, 0px));
   margin-top: auto;
   background: transparent;
   border: none;
@@ -926,10 +930,16 @@ body.body--lyrics-open .app-root--mobile .global-player {
   outline: none;
 }
 
+.app-root--mobile .player-screen__range {
+  --progress: 0%;
+  -webkit-appearance: none;
+  appearance: none;
+}
+
 .app-root--mobile .player-screen__range::-webkit-slider-runnable-track {
-  height: 2.5px;
+  height: 3px;
   border-radius: 2px;
-  background: rgba(255, 255, 255, 0.12);
+  background: linear-gradient(to right, #ffffff var(--progress), rgba(255, 255, 255, 0.12) var(--progress));
 }
 
 .app-root--mobile .player-screen__range::-webkit-slider-thumb {
@@ -955,9 +965,15 @@ body.body--lyrics-open .app-root--mobile .global-player {
 }
 
 .app-root--mobile .player-screen__range::-moz-range-track {
-  height: 2.5px;
+  height: 3px;
   border-radius: 2px;
   background: rgba(255, 255, 255, 0.12);
+}
+
+.app-root--mobile .player-screen__range::-moz-range-progress {
+  height: 3px;
+  border-radius: 2px;
+  background: #ffffff;
 }
 
 .app-root--mobile .player-screen__range::-moz-range-thumb {
@@ -974,15 +990,20 @@ body.body--lyrics-open .app-root--mobile .global-player {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 32px;
+  gap: 28px;
+  padding: 0 !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
 }
 
 .app-root--mobile .player-screen--vinyl .player-screen__controls .icon-button {
-  width: 46px;
-  height: 46px;
-  min-width: 46px;
-  min-height: 46px;
-  color: rgba(255, 255, 255, 0.75);
+  width: 52px;
+  height: 52px;
+  min-width: 52px;
+  min-height: 52px;
+  color: rgba(255, 255, 255, 0.85);
   background: transparent;
   border-color: transparent;
   backdrop-filter: none;
@@ -993,7 +1014,7 @@ body.body--lyrics-open .app-root--mobile .global-player {
 
 .app-root--mobile .player-screen--vinyl .player-screen__controls .icon-button:hover {
   color: #ffffff;
-  background: rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.1);
   transform: scale(1.08);
 }
 
@@ -1001,18 +1022,19 @@ body.body--lyrics-open .app-root--mobile .global-player {
   transform: scale(0.95);
 }
 
-.app-root--mobile .player-screen__controls .icon-button--large {
-  width: 60px;
-  height: 60px;
-  min-width: 60px;
-  min-height: 60px;
+.app-root--mobile .player-screen--vinyl .player-screen__controls .icon-button--large {
+  width: 72px;
+  height: 72px;
+  min-width: 72px;
+  min-height: 72px;
   border-radius: 50%;
   color: #fff;
-  background: rgba(var(--accent-rgb), 0.82);
-  border-color: transparent;
-  box-shadow:
-    0 4px 20px rgba(0, 0, 0, 0.18),
-    0 0 32px rgba(var(--accent-rgb), 0.15);
+  background: transparent !important;
+  border: 0 !important;
+  border-color: transparent !important;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  box-shadow: none !important;
 }
 
 .app-root--mobile .player-screen__lyric {
@@ -1123,12 +1145,12 @@ body.body--lyrics-open .app-root--mobile .global-player {
 }
 
 .app-root--mobile .player-panel-overlay {
-  inset: 0 0 calc(var(--global-bar-height) + 16px + env(safe-area-inset-bottom, 0px)) 0;
+  inset: 0;
   align-items: flex-end;
   padding: 12px;
-  background: rgba(225, 232, 236, 0.84);
-  backdrop-filter: blur(16px) saturate(106%);
-  -webkit-backdrop-filter: blur(16px) saturate(106%);
+  background: transparent;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
 }
 
 .app-root--mobile .player-panel {
@@ -1233,10 +1255,10 @@ body.body--lyrics-open .app-root--mobile .global-player {
 .app-root--mobile .playlist-sidebar {
   gap: 10px;
   padding: 12px 12px 10px;
-  background: rgba(247, 250, 251, 0.56);
-  border-color: rgba(255, 255, 255, 0.42);
-  backdrop-filter: blur(12px) saturate(104%);
-  -webkit-backdrop-filter: blur(12px) saturate(104%);
+  background: rgba(255, 255, 255, 0.18);
+  border-color: rgba(255, 255, 255, 0.24);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
 }
 
 .app-root--mobile .playlist-sidebar__top {
@@ -1268,15 +1290,15 @@ body.body--lyrics-open .app-root--mobile .global-player {
   min-height: 56px;
   padding: 8px 10px;
   border-radius: 12px;
-  background: rgba(255, 255, 255, 0.74);
-  border-color: rgba(255, 255, 255, 0.46);
+  background: rgba(255, 255, 255, 0.32);
+  border-color: rgba(255, 255, 255, 0.28);
   box-shadow: none;
 }
 
 .app-root--mobile .playlist-sidebar__item--fixed.playlist-sidebar__item--active,
 .app-root--mobile .playlist-sidebar__item--custom.playlist-sidebar__item--active {
-  border-color: rgba(var(--accent-rgb), 0.18);
-  background: rgba(255, 255, 255, 0.9);
+  border-color: rgba(var(--accent-rgb), 0.35);
+  background: rgba(255, 255, 255, 0.5);
 }
 
 .app-root--mobile .playlist-sidebar__mobile-icon {
@@ -1346,8 +1368,8 @@ body.body--lyrics-open .app-root--mobile .global-player {
   min-height: 54px;
   padding: 8px 10px;
   border-radius: 12px;
-  background: rgba(255, 255, 255, 0.68);
-  border-color: rgba(255, 255, 255, 0.44);
+  background: rgba(255, 255, 255, 0.28);
+  border-color: rgba(255, 255, 255, 0.24);
   box-shadow: none;
 }
 
@@ -1409,8 +1431,8 @@ body.body--lyrics-open .app-root--mobile .global-player {
 }
 
 .app-root--mobile .playlist-stage__actions .icon-button {
-  background: rgba(255, 255, 255, 0.74);
-  border-color: rgba(255, 255, 255, 0.46);
+  background: rgba(255, 255, 255, 0.32);
+  border-color: rgba(255, 255, 255, 0.28);
   box-shadow: none;
 }
 
@@ -1482,8 +1504,8 @@ body.body--lyrics-open .app-root--mobile .global-player {
   width: 30px;
   min-width: 30px;
   min-height: 30px;
-  background: rgba(255, 255, 255, 0.72);
-  border-color: rgba(255, 255, 255, 0.44);
+  background: rgba(255, 255, 255, 0.28);
+  border-color: rgba(255, 255, 255, 0.24);
   box-shadow: none;
 }
 
@@ -1649,10 +1671,11 @@ body.body--lyrics-open .app-root--mobile .global-player {
 }
 
 .app-root--mobile .modal-backdrop {
-  padding: 12px 12px calc(var(--global-bar-height) + 18px + env(safe-area-inset-bottom, 0px));
-  background: rgba(225, 232, 236, 0.88);
-  backdrop-filter: blur(16px) saturate(106%);
-  -webkit-backdrop-filter: blur(16px) saturate(106%);
+  padding: 12px;
+  inset: 0;
+  background: transparent;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
 }
 
 .app-root--mobile .confirm-dialog {

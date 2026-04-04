@@ -16,7 +16,7 @@ const router = useRouter()
 const player = usePlayerStore()
 const { isDesktop } = useViewportMode()
 
-const { activeLyricIndex, currentQueue, currentQueueSource, currentSong, isCurrentFavorite, isPlaying, lyricLines, playbackMode, playlists, currentTime, duration } = player
+const { activeLyricIndex, currentQueue, currentQueueSource, currentSong, isCurrentFavorite, isPlaying, lyricLines, playbackMode, playlists } = player
 
 const coverUrl = computed(() => currentSong.value?.album?.picUrl || currentSong.value?.picUrl || '')
 const bgStyle = computed(() => {
@@ -25,8 +25,14 @@ const bgStyle = computed(() => {
     backgroundImage: `url(${coverUrl.value})`,
   }
 })
-const seekMax = computed(() => duration.value || currentTime.value || 0)
+const seekMax = computed(() => player.duration.value || player.currentTime.value || 0)
 const canSeek = computed(() => Boolean(currentSong.value?.cid && seekMax.value > 0))
+const progressPercent = computed(() => {
+  const max = seekMax.value
+  const time = player.currentTime.value
+  if (!max || max <= 0 || !Number.isFinite(max) || !Number.isFinite(time)) return 0
+  return Math.min(100, Math.max(0, time / max * 100))
+})
 const playlistPickerOpen = ref(false)
 const playlistPickerError = ref('')
 const mobileLyricsOpen = ref(false)
@@ -65,8 +71,8 @@ const mobilePreview = computed(() => {
   }
 
   const safeIndex = Math.min(Math.max(activeLyricIndex.value, 0), lyricLines.value.length - 1)
-  const start = Math.max(0, safeIndex - 3)
-  const end = Math.min(lyricLines.value.length, safeIndex + 4)
+  const start = Math.max(0, safeIndex - 2)
+  const end = Math.min(lyricLines.value.length, safeIndex + 3)
 
   return {
     lines: lyricLines.value.slice(start, end),
@@ -420,18 +426,19 @@ onBeforeUnmount(() => {
 
           <div class="player-screen__inline-controls">
             <label class="player-screen__seek-row">
-              <span class="player-screen__time">{{ formatTime(currentTime.value) }}</span>
+              <span class="player-screen__time">{{ formatTime(player.currentTime.value) }}</span>
               <input
                 class="player-screen__range"
                 type="range"
                 min="0"
                 :max="seekMax"
                 step="0.1"
-                :value="currentTime.value"
+                :value="player.currentTime.value"
                 :disabled="!canSeek"
+                :style="{ '--progress': progressPercent + '%' }"
                 @input="player.seekTo($event.target.value)"
               />
-              <span class="player-screen__time">{{ formatTime(duration.value) }}</span>
+              <span class="player-screen__time">{{ formatTime(player.duration.value) }}</span>
             </label>
 
             <div class="player-screen__controls">
