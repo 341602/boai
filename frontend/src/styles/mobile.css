@@ -39,6 +39,15 @@ body.body--lyrics-open .app-root--mobile .app-brand {
   visibility: hidden;
 }
 
+/* 移动端播放页始终隐藏底部播放栏 */
+.app-root--mobile .page-shell--player ~ .global-player,
+body.body--lyrics-open .app-root--mobile .global-player {
+  opacity: 0;
+  transform: translateY(100%);
+  pointer-events: none;
+  transition: opacity 0.3s ease, transform 0.3s ease;
+}
+
 .app-root--mobile .page-shell {
   width: 100%;
   padding: calc(34px + env(safe-area-inset-top, 0px)) 12px 0;
@@ -65,14 +74,12 @@ body.body--lyrics-open .app-root--mobile .app-brand {
 
 .app-root--mobile .page-shell--player {
   position: fixed;
-  top: calc(56px + env(safe-area-inset-top, 0px));
-  right: 12px;
-  bottom: calc(var(--global-bar-height) + 18px + env(safe-area-inset-bottom, 0px));
-  left: 12px;
-  width: auto;
+  inset: 0;
+  width: 100%;
   margin: 0;
   padding: 0;
   overflow: hidden;
+  z-index: 30;
 }
 
 .app-root--mobile .page-header {
@@ -151,7 +158,6 @@ body.body--lyrics-open .app-root--mobile .app-brand {
 
 .app-root--mobile .hero-panel,
 .app-root--mobile .entry-card,
-.app-root--mobile .player-screen,
 .app-root--mobile .section-card,
 .app-root--mobile .playlist-sidebar,
 .app-root--mobile .playlist-stage {
@@ -161,8 +167,7 @@ body.body--lyrics-open .app-root--mobile .app-brand {
 .app-root--mobile .hero-panel,
 .app-root--mobile .section-card,
 .app-root--mobile .playlist-sidebar,
-.app-root--mobile .playlist-stage,
-.app-root--mobile .player-screen {
+.app-root--mobile .playlist-stage {
   background: rgba(250, 252, 253, 0.18);
 }
 
@@ -403,7 +408,7 @@ body.body--lyrics-open .app-root--mobile .app-brand {
 }
 
 .app-root--mobile .track-row__cover,
-.app-root--mobile .playlist-track-row__cover {
+.app-root--mobile .playlist-track_row__cover {
   width: 44px;
   height: 44px;
   border-radius: 12px;
@@ -438,31 +443,90 @@ body.body--lyrics-open .app-root--mobile .app-brand {
   min-height: 30px;
 }
 
+/* ================================================================
+   MOBILE PLAYER — 沉浸式黑胶唱片风格（匹配项目玻璃拟态设计体系）
+   ================================================================ */
+
 .app-root--mobile .player-screen {
   min-height: 0;
   height: 100%;
-  display: grid;
-  grid-template-rows: auto minmax(0, 1fr);
-  padding: 0 12px 12px;
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.24), rgba(255, 255, 255, 0.06)),
-    rgba(247, 250, 251, 0.3);
+  display: flex;
+  flex-direction: column;
+  padding: 0;
+  background: transparent;
 }
 
+.app-root--mobile .player-screen--vinyl {
+  position: relative;
+  overflow: hidden;
+}
+
+/* 全屏模糊背景 — 专辑封面 */
+.app-root--mobile .player-screen__bg-blur {
+  position: absolute;
+  inset: -50px;
+  z-index: 0;
+  background-size: cover;
+  background-position: center center;
+  background-repeat: no-repeat;
+  filter: blur(80px) saturate(140%) brightness(0.45);
+  transform: scale(1.2);
+}
+
+/* 渐变遮罩层 — 从上到下由浅入深 */
+.app-root--mobile .player-screen--vinyl::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  background: linear-gradient(
+    180deg,
+    rgba(15, 18, 25, 0.18) 0%,
+    rgba(15, 18, 25, 0.06) 22%,
+    transparent 42%,
+    rgba(15, 18, 25, 0.08) 72%,
+    rgba(15, 18, 25, 0.45) 92%,
+    rgba(15, 18, 25, 0.7) 100%
+  );
+  pointer-events: none;
+}
+
+/* 所有内容在背景之上 */
+.app-root--mobile .player-screen > *:not(.player-screen__bg-blur) {
+  position: relative;
+  z-index: 2;
+}
+
+/* ---- HEADER ---- */
 .app-root--mobile .player-screen__header {
   display: grid;
   grid-template-columns: auto 1fr auto;
   align-items: center;
-  gap: 10px;
-  position: sticky;
-  top: 0;
-  z-index: 10;
-  margin: 0 -12px 10px;
-  padding: 12px 12px 10px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.22);
-  background: rgba(247, 250, 251, 0.64);
-  backdrop-filter: blur(12px) saturate(106%);
-  -webkit-backdrop-filter: blur(12px) saturate(106%);
+  gap: 8px;
+  padding: calc(12px + env(safe-area-inset-top, 0px)) 16px 12px;
+  border-bottom: none;
+  background: transparent;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+
+/* header 内按钮 — 磨砂玻璃质感 */
+.app-root--mobile .player-screen--vinyl .player-screen__header .icon-button {
+  width: 36px;
+  height: 36px;
+  min-width: 36px;
+  min-height: 36px;
+  color: #fff;
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.16);
+  backdrop-filter: blur(12px) saturate(140%);
+  -webkit-backdrop-filter: blur(12px) saturate(140%);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+}
+
+.app-root--mobile .player-screen--vinyl .player-screen__header .icon-button:hover {
+  background: rgba(255, 255, 255, 0.18);
+  border-color: rgba(255, 255, 255, 0.26);
 }
 
 .app-root--mobile .player-screen__nav {
@@ -471,36 +535,264 @@ body.body--lyrics-open .app-root--mobile .app-brand {
   justify-content: flex-start;
 }
 
+/* 操作按钮组 */
 .app-root--mobile .player-screen__actions {
   justify-content: flex-end;
   gap: 4px;
-  padding: 4px;
-  border: 1px solid rgba(255, 255, 255, 0.28);
+  padding: 3px;
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.2);
-  box-shadow: 0 8px 18px rgba(15, 23, 42, 0.06);
+  background: rgba(255, 255, 255, 0.09);
+  border: 1px solid rgba(255, 255, 255, 0.11);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  backdrop-filter: blur(14px) saturate(140%);
+  -webkit-backdrop-filter: blur(14px) saturate(140%);
 }
 
+/* ---- BODY & SIDE ---- */
 .app-root--mobile .player-screen__body {
-  grid-template-columns: 1fr;
-  grid-template-rows: auto;
-  gap: 0;
+  flex: 1 1 auto;
   min-height: 0;
-  height: 100%;
-  overflow: hidden;
-  padding-top: 4px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 0;
 }
 
 .app-root--mobile .player-screen__side {
-  display: grid;
-  grid-template-rows: auto minmax(0, 1fr);
-  gap: 16px;
-  min-height: 0;
-  height: 100%;
-  padding-top: 0;
-  align-content: stretch;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0;
+  width: 100%;
+  padding: 0 20px;
 }
 
+.app-root--mobile .player-screen__side--vinyl {
+  padding: 4px 16px 0;
+}
+
+/* ===== 黑胶唱片舞台 ===== */
+.app-root--mobile .player-screen__vinyl-stage {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: min(280px, 68vw);
+  height: min(280px, 68vw);
+  margin: 20px auto 0;
+}
+
+/* ===== 唱针 TONEARM ===== */
+.app-root--mobile .player-screen__tonearm {
+  position: absolute;
+  top: -8px;
+  right: -18px;
+  z-index: 10;
+  transform-origin: 78% 86%;
+  transform: rotate(-32deg);
+  transition: transform 0.9s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.app-root--mobile .player-screen__tonearm--playing {
+  transform: rotate(-4deg);
+}
+
+.app-root--mobile .player-screen__tonearm__arm {
+  width: 78px;
+  height: 6px;
+  border-radius: 3px;
+  background: linear-gradient(
+    175deg,
+    rgba(220, 205, 185, 0.95) 0%,
+    rgba(180, 155, 120, 0.9) 50%,
+    rgba(130, 105, 75, 0.88) 100%
+  );
+  transform: rotate(34deg);
+  transform-origin: 90% center;
+  box-shadow:
+    0 2px 6px rgba(0, 0, 0, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.35),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.15);
+}
+
+.app-root--mobile .player-screen__tonearm__head {
+  position: absolute;
+  bottom: -3px;
+  left: -3px;
+  width: 10px;
+  height: 14px;
+  border-radius: 2px 2px 5px 5px;
+  background: linear-gradient(
+    170deg,
+    rgba(235, 225, 210, 0.95) 0%,
+    rgba(190, 165, 130, 0.9) 60%,
+    rgba(120, 95, 65, 0.85) 100%
+  );
+  box-shadow:
+    0 1px 4px rgba(0, 0, 0, 0.28),
+    inset 0 1px 0 rgba(255, 255, 255, 0.35);
+  transform: rotate(34deg);
+  transform-origin: top center;
+}
+
+/* 唱针底座 */
+.app-root--mobile .player-screen__tonearm::before {
+  content: '';
+  position: absolute;
+  bottom: -12px;
+  left: 10px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: radial-gradient(
+    circle at 42% 38%,
+    rgba(200, 180, 150, 0.45) 0%,
+    transparent 55%
+  ), linear-gradient(145deg, rgba(160, 138, 108, 0.85), rgba(88, 68, 44, 0.9));
+  box-shadow:
+    0 2px 6px rgba(0, 0, 0, 0.28),
+    inset 0 1px 1px rgba(255, 255, 255, 0.12);
+}
+
+/* ===== 黑胶唱片 VINYL RECORD ===== */
+.app-root--mobile .player-screen__vinyl {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at 50% 50%, transparent 27%, rgba(255, 255, 255, 0.04) 28%, transparent 29%),
+    radial-gradient(circle at 50% 50%, transparent 41%, rgba(255, 255, 255, 0.03) 42%, transparent 43%),
+    radial-gradient(circle at 50% 50%, transparent 55%, rgba(255, 255, 255, 0.04) 56%, transparent 57%),
+    radial-gradient(circle at 50% 50%, transparent 69%, rgba(255, 255, 255, 0.025) 70%, transparent 71%),
+    radial-gradient(circle at 50% 50%, transparent 82%, rgba(255, 255, 255, 0.035) 83%, transparent 84%),
+    repeating-radial-gradient(circle at 50% 50%, transparent 0, transparent 1.6px, rgba(255, 255, 255, 0.035) 1.7px, transparent 2.1px),
+    linear-gradient(160deg, rgba(60, 54, 48, 0.92) 0%, rgba(32, 28, 24, 0.96) 50%, rgba(48, 42, 36, 0.93) 100%);
+  box-shadow:
+    0 0 0 1.5px rgba(120, 105, 85, 0.2),
+    0 0 0 0.5px rgba(0, 0, 0, 0.3),
+    0 12px 40px rgba(0, 0, 0, 0.45),
+    0 4px 12px rgba(0, 0, 0, 0.25),
+    inset 0 2px 4px rgba(255, 255, 255, 0.06),
+    inset 0 0 30px rgba(0, 0, 0, 0.35);
+  animation: vinyl-spin 8s linear infinite;
+  animation-play-state: paused;
+}
+
+.app-root--mobile .player-screen__vinyl--spinning {
+  animation-play-state: running;
+}
+
+@keyframes vinyl-spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.app-root--mobile .player-screen__vinyl__grooves {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  pointer-events: none;
+}
+
+/* 中心标签区 — 圆形封面 */
+.app-root--mobile .player-screen__vinyl__label {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 58%;
+  height: 58%;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  overflow: hidden;
+  background: linear-gradient(145deg, rgba(45, 40, 35, 0.7), rgba(25, 22, 19, 0.85));
+  box-shadow:
+    0 0 0 2px rgba(160, 142, 115, 0.18),
+    0 0 16px rgba(0, 0, 0, 0.2),
+    inset 0 1px 2px rgba(255, 255, 255, 0.05),
+    inset 0 0 8px rgba(0, 0, 0, 0.3);
+}
+
+.app-root--mobile .player-screen__vinyl__cover {
+  width: 100%;
+  height: 100%;
+}
+
+.app-root--mobile .player-screen__vinyl__cover img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.app-root--mobile .player-screen__vinyl__cover--fallback {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.8rem;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.3);
+  background: linear-gradient(145deg, rgba(55, 48, 40, 0.9), rgba(30, 26, 22, 0.95));
+}
+
+/* 中心转轴孔 */
+.app-root--mobile .player-screen__vinyl__hole {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 13%;
+  height: 13%;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at 38% 36%, rgba(170, 155, 130, 0.3), transparent 55%),
+    linear-gradient(145deg, rgba(18, 15, 12, 0.94), rgba(38, 33, 28, 0.97));
+  box-shadow:
+    inset 0 1px 2px rgba(0, 0, 0, 0.55),
+    0 1px 1px rgba(200, 185, 160, 0.1);
+  z-index: 3;
+}
+
+.app-root--mobile .player-screen__vinyl__hole::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 24%;
+  height: 24%;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.55);
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.7);
+}
+
+/* ===== 歌曲 META 信息 ===== */
+.app-root--mobile .player-screen__meta--vinyl {
+  margin-top: 18px;
+  padding: 0 4px;
+  text-align: center;
+}
+
+.app-root--mobile .player-screen--vinyl .player-screen__meta h1 {
+  font-size: clamp(1.32rem, 6vw, 1.72rem);
+  line-height: 1.15;
+  letter-spacing: -0.02em;
+  font-weight: 700;
+  color: #ffffff;
+  text-shadow: 0 1px 8px rgba(0, 0, 0, 0.3);
+}
+
+.app-root--mobile .player-screen--vinyl .player-screen__meta p {
+  margin-top: 5px;
+  font-size: 0.86rem;
+  line-height: 1.4;
+  color: rgba(255, 255, 255, 0.58);
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
+}
+
+/* Desktop hero/cover（桌面端不变） */
 .app-root--mobile .player-screen__hero {
   position: relative;
   justify-items: center;
@@ -548,24 +840,21 @@ body.body--lyrics-open .app-root--mobile .app-brand {
   display: none;
 }
 
-.app-root--mobile .player-screen__lyric-preview {
+/* ===== 歌词预览 — 简洁融入 ===== */
+.app-root--mobile .player-screen--vinyl .player-screen__lyric-preview {
   display: flex;
   flex-direction: column;
   justify-content: center;
-  gap: 10px;
+  gap: 6px;
   width: 100%;
-  margin-top: 0;
-  min-height: clamp(168px, 24vh, 210px);
-  height: 100%;
-  padding: 18px 16px;
-  border: 1px solid rgba(255, 255, 255, 0.42);
-  border-radius: 20px;
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.2), rgba(255, 255, 255, 0.06)),
-    rgba(247, 250, 251, 0.76);
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.18),
-    0 14px 28px rgba(15, 23, 42, 0.06);
+  margin-top: 16px;
+  padding: 12px 0;
+  border: none;
+  background: transparent;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  box-shadow: none;
+  border-radius: 0;
   text-align: center;
 }
 
@@ -573,31 +862,157 @@ body.body--lyrics-open .app-root--mobile .app-brand {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  color: var(--text-tertiary);
-  font-size: 0.9rem;
-  line-height: 1.45;
-  opacity: 0.68;
+  color: rgba(255, 255, 255, 0.35);
+  font-size: 0.8rem;
+  line-height: 1.6;
 }
 
 .app-root--mobile .player-screen__lyric-preview-line--near {
-  color: var(--text-secondary);
-  font-size: 0.98rem;
-  opacity: 0.86;
+  color: rgba(255, 255, 255, 0.55);
+  font-size: 0.84rem;
 }
 
 .app-root--mobile .player-screen__lyric-preview-line--far {
-  opacity: 0.52;
+  color: rgba(255, 255, 255, 0.28);
 }
 
 .app-root--mobile .player-screen__lyric-preview-line--active {
-  color: var(--text-primary);
-  font-size: 1.14rem;
-  font-weight: 650;
-  opacity: 1;
+  color: #ffffff;
+  font-size: 0.92rem;
+  font-weight: 600;
 }
 
 .app-root--mobile .player-screen__lyric-preview-line--empty {
-  color: var(--text-secondary);
+  color: rgba(255, 255, 255, 0.35);
+}
+
+/* ===== 底部播放控制 — 融入页面，无边界感 ===== */
+.app-root--mobile .player-screen__inline-controls {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  width: 100%;
+  padding: 20px 28px calc(24px + env(safe-area-inset-bottom, 0px));
+  margin-top: auto;
+  background: transparent;
+  border: none;
+}
+
+/* 进度条 — 极简融入 */
+.app-root--mobile .player-screen__seek-row {
+  display: grid;
+  grid-template-columns: 40px minmax(0, 1fr) 40px;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+}
+
+.app-root--mobile .player-screen__time {
+  font-size: 0.72rem;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.4);
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+
+.app-root--mobile .player-screen__range {
+  width: 100%;
+  height: 28px;
+  -webkit-appearance: none;
+  appearance: none;
+  background: transparent;
+  cursor: pointer;
+  outline: none;
+}
+
+.app-root--mobile .player-screen__range::-webkit-slider-runnable-track {
+  height: 2.5px;
+  border-radius: 2px;
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.app-root--mobile .player-screen__range::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 13px;
+  height: 13px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.9);
+  box-shadow: 0 1px 6px rgba(0, 0, 0, 0.2);
+  margin-top: -5.25px;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.app-root--mobile .player-screen__range::-webkit-slider-thumb:hover {
+  transform: scale(1.3);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.18);
+}
+
+.app-root--mobile .player-screen__range::-webkit-slider-thumb:active {
+  transform: scale(1.4);
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.22);
+}
+
+.app-root--mobile .player-screen__range::-moz-range-track {
+  height: 2.5px;
+  border-radius: 2px;
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.app-root--mobile .player-screen__range::-moz-range-thumb {
+  width: 13px;
+  height: 13px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(255, 255, 255, 0.9);
+  box-shadow: 0 1px 6px rgba(0, 0, 0, 0.2);
+}
+
+/* 控制按钮 — 纯图标，无背景无边框 */
+.app-root--mobile .player-screen__controls {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 32px;
+}
+
+.app-root--mobile .player-screen--vinyl .player-screen__controls .icon-button {
+  width: 46px;
+  height: 46px;
+  min-width: 46px;
+  min-height: 46px;
+  color: rgba(255, 255, 255, 0.75);
+  background: transparent;
+  border-color: transparent;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  box-shadow: none;
+  border-radius: 50%;
+}
+
+.app-root--mobile .player-screen--vinyl .player-screen__controls .icon-button:hover {
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.08);
+  transform: scale(1.08);
+}
+
+.app-root--mobile .player-screen--vinyl .player-screen__controls .icon-button:active {
+  transform: scale(0.95);
+}
+
+.app-root--mobile .player-screen__controls .icon-button--large {
+  width: 60px;
+  height: 60px;
+  min-width: 60px;
+  min-height: 60px;
+  border-radius: 50%;
+  color: #fff;
+  background: rgba(var(--accent-rgb), 0.82);
+  border-color: transparent;
+  box-shadow:
+    0 4px 20px rgba(0, 0, 0, 0.18),
+    0 0 32px rgba(var(--accent-rgb), 0.15);
 }
 
 .app-root--mobile .player-screen__lyric {
@@ -620,7 +1035,7 @@ body.body--lyrics-open .app-root--mobile .app-brand {
 
 .app-root--mobile .player-mobile-lyrics {
   position: fixed;
-  inset: 0 0 calc(var(--global-bar-height) + 16px + env(safe-area-inset-bottom, 0px)) 0;
+  inset: 0;
   z-index: 45;
   display: block;
   overscroll-behavior: contain;
@@ -630,14 +1045,14 @@ body.body--lyrics-open .app-root--mobile .app-brand {
   position: absolute;
   inset: 0;
   border: 0;
-  background: rgba(227, 233, 237, 0.76);
-  backdrop-filter: blur(14px) saturate(106%);
-  -webkit-backdrop-filter: blur(14px) saturate(106%);
+  background: rgba(15, 18, 25, 0.82);
+  backdrop-filter: blur(20px) saturate(120%);
+  -webkit-backdrop-filter: blur(20px) saturate(120%);
 }
 
 .app-root--mobile .player-mobile-lyrics__panel {
   position: absolute;
-  inset: calc(10px + env(safe-area-inset-top, 0px)) 12px 0 12px;
+  inset: calc(10px + env(safe-area-inset-top, 0px)) 12px calc(10px + env(safe-area-inset-bottom, 0px)) 12px;
   display: grid;
   grid-template-rows: auto minmax(0, 1fr);
   overflow: hidden;
@@ -1283,29 +1698,33 @@ html[data-theme='dark'] .app-root--mobile .hero-panel,
 html[data-theme='dark'] .app-root--mobile .section-card,
 html[data-theme='dark'] .app-root--mobile .playlist-sidebar,
 html[data-theme='dark'] .app-root--mobile .playlist-stage,
-html[data-theme='dark'] .app-root--mobile .player-screen,
 html[data-theme='dark'] .app-root--mobile .settings-section {
   background: rgba(17, 24, 39, 0.46);
   border-color: rgba(255, 255, 255, 0.12);
 }
 
-html[data-theme='dark'] .app-root--mobile .player-screen__header {
+/* Vinyl mode overrides dark theme defaults — keep immersive look */
+html[data-theme='dark'] .app-root--mobile .player-screen:not(.player-screen--vinyl) {
+  background: rgba(17, 24, 39, 0.46);
+  border-color: rgba(255, 255, 255, 0.12);
+}
+
+html[data-theme='dark'] .app-root--mobile .player-screen:not(.player-screen--vinyl) .player-screen__header {
   background: rgba(15, 23, 42, 0.72);
   border-bottom-color: rgba(255, 255, 255, 0.1);
 }
 
-html[data-theme='dark'] .app-root--mobile .player-screen__actions,
-html[data-theme='dark'] .app-root--mobile .player-screen__hero,
-html[data-theme='dark'] .app-root--mobile .player-screen__lyric-preview {
+html[data-theme='dark'] .app-root--mobile .player-screen:not(.player-screen--vinyl) .player-screen__actions,
+html[data-theme='dark'] .app-root--mobile .player-screen__hero {
   border-color: rgba(255, 255, 255, 0.12);
 }
 
-html[data-theme='dark'] .app-root--mobile .player-screen__actions {
+html[data-theme='dark'] .app-root--mobile .player-screen:not(.player-screen--vinyl) .player-screen__actions {
   background: rgba(15, 23, 42, 0.34);
 }
 
 html[data-theme='dark'] .app-root--mobile .player-screen__hero,
-html[data-theme='dark'] .app-root--mobile .player-screen__lyric-preview {
+html[data-theme='dark'] .app-root--mobile .player-screen:not(.player-screen--vinyl) .player-screen__lyric-preview {
   background:
     linear-gradient(180deg, rgba(255, 255, 255, 0.04), rgba(17, 24, 39, 0.16)),
     rgba(15, 23, 42, 0.56);

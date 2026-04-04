@@ -1,6 +1,6 @@
 <script setup>
 import { computed, onBeforeUnmount, ref, watch } from 'vue'
-import { ArrowDownToLine, ArrowDownUp, ArrowLeft, Check, Heart, House, ListMusic, ListPlus, Repeat1, Settings2, Shuffle, Trash2, X } from 'lucide-vue-next'
+import { ArrowDownToLine, ArrowDownUp, ArrowLeft, Check, Heart, House, ListMusic, ListPlus, Pause, Play, Repeat1, Settings2, Shuffle, SkipBack, SkipForward, Trash2, X } from 'lucide-vue-next'
 import { useRouter } from 'vue-router'
 import LyricDisplay from '../components/LyricDisplay.vue'
 import MarqueeText from '../components/MarqueeText.vue'
@@ -10,14 +10,23 @@ import { TEXTS } from '../constants/texts'
 import { lastNonPlayerRoute } from '../router'
 import { usePlayerStore } from '../stores/player'
 import { formatArtists, getTrackInitial } from '../utils/track'
+import { formatTime } from '../utils/lyrics'
 
 const router = useRouter()
 const player = usePlayerStore()
 const { isDesktop } = useViewportMode()
 
-const { activeLyricIndex, currentQueue, currentQueueSource, currentSong, isCurrentFavorite, lyricLines, playbackMode, playlists } = player
+const { activeLyricIndex, currentQueue, currentQueueSource, currentSong, isCurrentFavorite, isPlaying, lyricLines, playbackMode, playlists, currentTime, duration } = player
 
 const coverUrl = computed(() => currentSong.value?.album?.picUrl || currentSong.value?.picUrl || '')
+const bgStyle = computed(() => {
+  if (!coverUrl.value) return {}
+  return {
+    backgroundImage: `url(${coverUrl.value})`,
+  }
+})
+const seekMax = computed(() => duration.value || currentTime.value || 0)
+const canSeek = computed(() => Boolean(currentSong.value?.cid && seekMax.value > 0))
 const playlistPickerOpen = ref(false)
 const playlistPickerError = ref('')
 const mobileLyricsOpen = ref(false)
@@ -56,8 +65,8 @@ const mobilePreview = computed(() => {
   }
 
   const safeIndex = Math.min(Math.max(activeLyricIndex.value, 0), lyricLines.value.length - 1)
-  const start = Math.max(0, safeIndex - 2)
-  const end = Math.min(lyricLines.value.length, safeIndex + 3)
+  const start = Math.max(0, safeIndex - 3)
+  const end = Math.min(lyricLines.value.length, safeIndex + 4)
 
   return {
     lines: lyricLines.value.slice(start, end),
@@ -250,7 +259,9 @@ onBeforeUnmount(() => {
 
 <template>
   <div class="page-shell page-shell--player">
-    <section class="surface player-screen">
+    <section class="surface player-screen" :class="{ 'player-screen--vinyl': !isDesktop && currentSong }">
+      <div v-if="!isDesktop && coverUrl" class="player-screen__bg-blur" :style="bgStyle" />
+
       <header class="player-screen__header">
         <button class="icon-button" type="button" :title="TEXTS.back" :aria-label="TEXTS.back" @click="goBack">
           <ArrowLeft class="button-icon" />
@@ -322,8 +333,9 @@ onBeforeUnmount(() => {
         </div>
       </header>
 
-        <div v-if="currentSong" class="player-screen__body">
-        <div class="player-screen__side">
+      <div v-if="currentSong" class="player-screen__body">
+        <!-- Desktop Layout -->
+        <div v-if="isDesktop" class="player-screen__side">
           <div class="player-screen__hero">
             <div v-if="coverUrl" class="player-screen__cover">
               <img :src="coverUrl" :alt="currentSong.name" />
@@ -339,8 +351,7 @@ onBeforeUnmount(() => {
           </div>
 
           <button
-            v-if="!isDesktop"
-            class="player-screen__lyric-preview surface"
+            class="player-screen__lyric-preview"
             type="button"
             @click="openMobileLyrics"
           >
@@ -358,6 +369,90 @@ onBeforeUnmount(() => {
               {{ TEXTS.noLyrics }}
             </p>
           </button>
+        </div>
+
+        <!-- Mobile Vinyl Layout -->
+        <div v-else class="player-screen__side player-screen__side--vinyl">
+          <div class="player-screen__vinyl-stage">
+            <div class="player-screen__tonearm" :class="{ 'player-screen__tonearm--playing': isPlaying }">
+              <div class="player-screen__tonearm__arm" />
+              <div class="player-screen__tonearm__head" />
+            </div>
+
+            <div class="player-screen__vinyl" :class="{ 'player-screen__vinyl--spinning': isPlaying }">
+              <div class="player-screen__vinyl__grooves" />
+              <div class="player-screen__vinyl__label">
+                <div v-if="coverUrl" class="player-screen__vinyl__cover">
+                  <img :src="coverUrl" :alt="currentSong.name" />
+                </div>
+                <div v-else class="player-screen__vinyl__cover player-screen__vinyl__cover--fallback">
+                  {{ getTrackInitial(currentSong) }}
+                </div>
+              </div>
+              <div class="player-screen__vinyl__hole" />
+            </div>
+          </div>
+
+          <div class="player-screen__meta player-screen__meta--vinyl">
+            <MarqueeText tag="h1" :text="currentSong.name" />
+            <MarqueeText tag="p" :text="formatArtists(currentSong)" />
+          </div>
+
+          <button
+            class="player-screen__lyric-preview"
+            type="button"
+            @click="openMobileLyrics"
+          >
+            <template v-if="mobilePreview.lines.length">
+              <p
+                v-for="(line, index) in mobilePreview.lines"
+                :key="line.id"
+                class="player-screen__lyric-preview-line"
+                :class="previewLineClass(index)"
+              >
+                {{ line.text }}
+              </p>
+            </template>
+            <p v-else class="player-screen__lyric-preview-line player-screen__lyric-preview-line--empty">
+              {{ TEXTS.noLyrics }}
+            </p>
+          </button>
+
+          <div class="player-screen__inline-controls">
+            <label class="player-screen__seek-row">
+              <span class="player-screen__time">{{ formatTime(currentTime.value) }}</span>
+              <input
+                class="player-screen__range"
+                type="range"
+                min="0"
+                :max="seekMax"
+                step="0.1"
+                :value="currentTime.value"
+                :disabled="!canSeek"
+                @input="player.seekTo($event.target.value)"
+              />
+              <span class="player-screen__time">{{ formatTime(duration.value) }}</span>
+            </label>
+
+            <div class="player-screen__controls">
+              <button class="icon-button" type="button" :title="TEXTS.prev" :aria-label="TEXTS.prev" @click="player.playPrevious">
+                <SkipBack class="button-icon" />
+              </button>
+              <button
+                class="icon-button icon-button--solid icon-button--large"
+                type="button"
+                :title="isPlaying ? TEXTS.pause : TEXTS.play"
+                :aria-label="isPlaying ? TEXTS.pause : TEXTS.play"
+                @click="player.togglePlayback"
+              >
+                <Pause v-if="isPlaying" class="button-icon" />
+                <Play v-else class="button-icon" />
+              </button>
+              <button class="icon-button" type="button" :title="TEXTS.next" :aria-label="TEXTS.next" @click="player.playNext">
+                <SkipForward class="button-icon" />
+              </button>
+            </div>
+          </div>
         </div>
 
         <section class="player-screen__lyric surface">
