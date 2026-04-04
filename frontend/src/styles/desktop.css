@@ -145,25 +145,42 @@
     display: grid;
     grid-template-rows: auto minmax(0, 1fr);
     overflow: hidden;
+    padding: 24px;
   }
 
   .app-root--desktop .player-screen__header {
     display: grid;
     grid-template-columns: auto 1fr auto;
     align-items: center;
+    gap: 16px;
   }
 
   .app-root--desktop .player-screen__body {
     height: 100%;
     min-height: 0;
     overflow: hidden;
-    grid-template-columns: 340px minmax(0, 1fr);
+    grid-template-columns: minmax(360px, 0.88fr) minmax(0, 1.12fr);
+    gap: 22px;
     align-items: stretch;
   }
 
   .app-root--desktop .player-screen__side {
     min-height: 0;
-    align-content: start;
+    align-content: stretch;
+  }
+
+  .app-root--desktop .player-screen__hero {
+    height: 100%;
+    align-content: center;
+    justify-items: center;
+  }
+
+  .app-root--desktop .player-screen__cover {
+    width: min(100%, 336px);
+  }
+
+  .app-root--desktop .player-screen__meta {
+    width: min(100%, 360px);
   }
 
   .app-root--desktop .player-screen__lyric {
@@ -172,6 +189,7 @@
     display: grid;
     grid-template-rows: auto minmax(0, 1fr);
     overflow: hidden;
+    padding: 18px;
   }
 
   .app-root--desktop .player-panel-overlay {
