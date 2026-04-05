@@ -49,7 +49,7 @@ async function checkForUpdates() {
   updateError.value = ''
   
   try {
-    const response = await fetch('https://api.github.com/repos/341602/boai/releases/latest')
+    const response = await fetch('https://ghproxy.com/https://api.github.com/repos/341602/boai/releases/latest')
     
     if (response.status === 404) {
       // 没有发布的 releases
