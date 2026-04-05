@@ -81,10 +81,14 @@ body.body--lyrics-open .app-root--mobile .global-player {
   position: fixed;
   inset: 0;
   width: 100%;
-  margin: 0;
-  padding: 0;
+  height: 100%;
+  margin: 0 !important;
+  padding: 0 !important;
   overflow: hidden;
   z-index: 30;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
 }
 
 .app-root--mobile .page-shell--player .page-header {
@@ -471,8 +475,13 @@ body.body--lyrics-open .app-root--mobile .global-player {
   height: 100%;
   display: flex;
   flex-direction: column;
-  padding: 0;
-  background: transparent;
+  padding: 0 !important;
+  margin: 0 !important;
+  background: transparent !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  overflow: hidden;
 }
 
 .app-root--mobile .player-screen--vinyl {
@@ -1548,6 +1557,27 @@ body.body--lyrics-open .app-root--mobile .global-player {
 .app-root--mobile .settings-row__meta p,
 .app-root--mobile .settings-row__value {
   font-size: 0.78rem;
+}
+
+.app-root--mobile .settings-row--update {
+  margin-top: 8px;
+  padding: 12px;
+  background: rgba(var(--accent-rgb), 0.1);
+  border-radius: 12px;
+  border: 1px solid rgba(var(--accent-rgb), 0.2);
+}
+
+.app-root--mobile .settings-row__actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.app-root--mobile .settings-row__actions .plain-button,
+.app-root--mobile .settings-row__actions .solid-button {
+  min-height: 36px;
+  padding-inline: 12px;
+  font-size: 0.8rem;
 }
 
 .app-root--mobile .global-player {

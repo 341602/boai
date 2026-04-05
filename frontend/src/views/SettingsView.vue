@@ -1,5 +1,5 @@
 <script setup>
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import { Check, Disc3, House, ListMusic, Monitor, MoonStar, Settings2, SunMedium } from 'lucide-vue-next'
 import appPackage from '../../package.json'
 import { THEME_MODES, useThemePreference } from '../composables/useThemePreference'
@@ -37,6 +37,67 @@ const themeLabelMap = {
 const currentThemeLabel = computed(() => themeLabelMap[resolvedTheme.value] || TEXTS.settingsResolvedLight)
 const systemThemeLabel = computed(() => themeLabelMap[systemTheme.value] || TEXTS.settingsResolvedLight)
 const versionLabel = computed(() => `v${appPackage.version || '0.0.0'}`)
+
+// 更新检查相关状态
+const isCheckingUpdate = ref(false)
+const updateAvailable = ref(false)
+const latestVersion = ref('')
+const updateError = ref('')
+
+async function checkForUpdates() {
+  isCheckingUpdate.value = true
+  updateError.value = ''
+  
+  try {
+    const response = await fetch('https://api.github.com/repos/341602/boai/releases/latest')
+    
+    if (!response.ok) {
+      throw new Error('Network response was not ok')
+    }
+    
+    const data = await response.json()
+    const latestTag = data.tag_name.replace('v', '')
+    const currentVersion = appPackage.version || '0.0.0'
+    
+    if (compareVersions(latestTag, currentVersion) > 0) {
+      updateAvailable.value = true
+      latestVersion.value = latestTag
+    } else {
+      alert(TEXTS.settingsUpdateUpToDate)
+    }
+  } catch (error) {
+    console.error('检查更新失败:', error)
+    alert(TEXTS.settingsUpdateFailed)
+  } finally {
+    isCheckingUpdate.value = false
+  }
+}
+
+function updateApp() {
+  // 刷新页面获取最新版本
+  location.reload()
+}
+
+function dismissUpdate() {
+  updateAvailable.value = false
+  latestVersion.value = ''
+}
+
+// 版本号比较函数
+function compareVersions(version1, version2) {
+  const v1 = version1.split('.').map(Number)
+  const v2 = version2.split('.').map(Number)
+  
+  for (let i = 0; i < Math.max(v1.length, v2.length); i++) {
+    const num1 = v1[i] || 0
+    const num2 = v2[i] || 0
+    
+    if (num1 > num2) return 1
+    if (num1 < num2) return -1
+  }
+  
+  return 0
+}
 </script>
 
 <template>
@@ -139,7 +200,29 @@ const versionLabel = computed(() => `v${appPackage.version || '0.0.0'}`)
               <strong>{{ TEXTS.settingsUpdateLabel }}</strong>
               <p>{{ TEXTS.settingsUpdateCopy }}</p>
             </div>
-            <span class="settings-row__value settings-row__value--muted">{{ TEXTS.settingsComingSoon }}</span>
+            <button 
+              class="plain-button" 
+              :disabled="isCheckingUpdate"
+              @click="checkForUpdates"
+            >
+              {{ isCheckingUpdate ? TEXTS.settingsUpdateChecking : TEXTS.settingsUpdateButton }}
+            </button>
+          </div>
+
+          <!-- 更新提示 -->
+          <div v-if="updateAvailable" class="settings-row settings-row--update">
+            <div class="settings-row__meta">
+              <strong>{{ TEXTS.settingsUpdateAvailable }}: v{{ latestVersion }}</strong>
+              <p>{{ versionLabel }} → v{{ latestVersion }}</p>
+            </div>
+            <div class="settings-row__actions">
+              <button class="plain-button" @click="dismissUpdate">
+                {{ TEXTS.settingsUpdateButtonLater }}
+              </button>
+              <button class="solid-button" @click="updateApp">
+                {{ TEXTS.settingsUpdateButtonUpdate }}
+              </button>
+            </div>
           </div>
         </div>
       </section>
