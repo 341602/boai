@@ -1827,7 +1827,7 @@ html[data-theme='dark'] .app-root--mobile .playlist-stage__actions .icon-button-
   border-color: rgba(var(--accent-rgb), 0.16);
 }
 
-html[data-theme='dark'] .app-root--mobile .player-screen__lyric-preview,
+html[data-theme='dark'] .app-root--mobile .player-screen:not(.player-screen--vinyl) .player-screen__lyric-preview,
 html[data-theme='dark'] .app-root--mobile .player-mobile-lyrics__panel,
 html[data-theme='dark'] .app-root--mobile .player-mobile-lyrics__header,
 html[data-theme='dark'] .app-root--mobile .player-mobile-lyrics__body,
@@ -1843,6 +1843,10 @@ html[data-theme='dark'] .app-root--mobile .empty-state--modal,
 html[data-theme='dark'] .app-root--mobile .playlist-sidebar__mobile-empty {
   background: rgba(15, 23, 42, 0.72);
   border-color: rgba(255, 255, 255, 0.12);
+}
+
+html[data-theme='dark'] .app-root--mobile .player-screen--vinyl .player-screen__lyric-preview {
+  background: transparent;
 }
 
 html[data-theme='dark'] .app-root--mobile .modal-backdrop,

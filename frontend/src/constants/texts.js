@@ -107,6 +107,7 @@ export const TEXTS = {
   settingsUpdateButtonUpdate: '立即更新',
   settingsUpdateButtonLater: '稍后更新',
   settingsUpdateFailed: '检查更新失败，请稍后重试',
+  settingsUpdateNoReleases: '暂无可更新版本',
   settingsResolvedLight: '明亮模式',
   settingsResolvedDark: '暗黑模式',
   settingsResolvedSystem: '跟随系统',

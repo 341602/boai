@@ -1,36 +1,36 @@
 :root,
 html[data-theme='light'] {
   --app-max-width: 1180px;
-  --accent-rgb: 49, 120, 134;
+  --accent-rgb: 103, 131, 217;
   --page-bg: #e7edf1;
   --page-bg-top: #f8fbfc;
   --page-radial-top-left: rgba(255, 255, 255, 0.94);
-  --page-radial-top-right: rgba(136, 160, 177, 0.18);
-  --page-radial-bottom-left: rgba(181, 197, 208, 0.2);
-  --page-radial-bottom-right: rgba(210, 219, 226, 0.1);
+  --page-radial-top-right: rgba(166, 183, 221, 0.22);
+  --page-radial-bottom-left: rgba(194, 204, 230, 0.18);
+  --page-radial-bottom-right: rgba(223, 229, 240, 0.1);
   --page-overlay-top-left: rgba(255, 255, 255, 0.68);
-  --page-overlay-top-right: rgba(152, 178, 193, 0.16);
-  --page-overlay-glow: rgba(190, 206, 216, 0.24);
-  --surface: rgba(251, 252, 253, 0.18);
-  --surface-strong: rgba(251, 252, 253, 0.24);
-  --surface-muted: rgba(251, 252, 253, 0.12);
-  --border: rgba(255, 255, 255, 0.5);
+  --page-overlay-top-right: rgba(182, 196, 230, 0.18);
+  --page-overlay-glow: rgba(189, 201, 228, 0.24);
+  --surface: rgba(255, 255, 255, 0.22);
+  --surface-strong: rgba(255, 255, 255, 0.32);
+  --surface-muted: rgba(255, 255, 255, 0.14);
+  --border: rgba(255, 255, 255, 0.58);
   --border-strong: rgba(15, 23, 42, 0.12);
   --text-primary: #111827;
   --text-secondary: #667085;
   --text-tertiary: #98a2b3;
   --accent: rgb(var(--accent-rgb));
-  --accent-soft: rgba(var(--accent-rgb), 0.1);
-  --accent-glass: rgba(var(--accent-rgb), 0.14);
-  --accent-glass-strong: rgba(var(--accent-rgb), 0.34);
+  --accent-soft: rgba(var(--accent-rgb), 0.12);
+  --accent-glass: rgba(var(--accent-rgb), 0.16);
+  --accent-glass-strong: rgba(var(--accent-rgb), 0.38);
   --danger: #b42318;
   --danger-soft: rgba(180, 35, 24, 0.08);
-  --shadow-soft: 0 18px 40px rgba(15, 23, 42, 0.06);
-  --shadow-button: 0 10px 22px rgba(15, 23, 42, 0.06);
-  --shadow-button-strong: 0 12px 26px rgba(15, 23, 42, 0.1);
-  --blur-strength: 18px;
-  --glass-highlight: rgba(255, 255, 255, 0.18);
-  --glass-edge: rgba(255, 255, 255, 0.14);
+  --shadow-soft: 0 20px 44px rgba(15, 23, 42, 0.07);
+  --shadow-button: 0 12px 24px rgba(15, 23, 42, 0.06);
+  --shadow-button-strong: 0 14px 30px rgba(15, 23, 42, 0.11);
+  --blur-strength: 22px;
+  --glass-highlight: rgba(255, 255, 255, 0.22);
+  --glass-edge: rgba(255, 255, 255, 0.18);
   --glass-inner-shadow: rgba(15, 23, 42, 0.02);
   --radius-sm: 10px;
   --radius-md: 12px;
@@ -49,35 +49,35 @@ html[data-theme='light'] {
 }
 
 html[data-theme='dark'] {
-  --accent-rgb: 121, 198, 206;
+  --accent-rgb: 156, 188, 255;
   --page-bg: #0f1722;
   --page-bg-top: #121d29;
   --page-radial-top-left: rgba(42, 60, 78, 0.46);
-  --page-radial-top-right: rgba(88, 161, 182, 0.12);
-  --page-radial-bottom-left: rgba(64, 90, 120, 0.16);
+  --page-radial-top-right: rgba(109, 142, 216, 0.14);
+  --page-radial-bottom-left: rgba(76, 98, 142, 0.18);
   --page-radial-bottom-right: rgba(15, 23, 34, 0.18);
   --page-overlay-top-left: rgba(31, 44, 58, 0.42);
-  --page-overlay-top-right: rgba(96, 189, 201, 0.08);
-  --page-overlay-glow: rgba(20, 32, 46, 0.34);
-  --surface: rgba(15, 23, 42, 0.22);
-  --surface-strong: rgba(15, 23, 42, 0.28);
-  --surface-muted: rgba(30, 41, 59, 0.16);
+  --page-overlay-top-right: rgba(114, 155, 226, 0.1);
+  --page-overlay-glow: rgba(40, 58, 90, 0.34);
+  --surface: rgba(15, 23, 42, 0.28);
+  --surface-strong: rgba(15, 23, 42, 0.34);
+  --surface-muted: rgba(30, 41, 59, 0.2);
   --border: rgba(255, 255, 255, 0.12);
   --border-strong: rgba(148, 163, 184, 0.16);
   --text-primary: #e5e7eb;
   --text-secondary: #9ca3af;
   --text-tertiary: #6b7280;
   --accent: rgb(var(--accent-rgb));
-  --accent-soft: rgba(var(--accent-rgb), 0.14);
-  --accent-glass: rgba(var(--accent-rgb), 0.18);
+  --accent-soft: rgba(var(--accent-rgb), 0.16);
+  --accent-glass: rgba(var(--accent-rgb), 0.2);
   --accent-glass-strong: rgba(var(--accent-rgb), 0.42);
   --danger: #f97066;
   --danger-soft: rgba(249, 112, 102, 0.14);
-  --shadow-soft: 0 18px 36px rgba(2, 6, 23, 0.24);
-  --shadow-button: 0 10px 22px rgba(2, 6, 23, 0.2);
-  --shadow-button-strong: 0 12px 28px rgba(2, 6, 23, 0.26);
-  --glass-highlight: rgba(255, 255, 255, 0.06);
-  --glass-edge: rgba(255, 255, 255, 0.06);
+  --shadow-soft: 0 20px 40px rgba(2, 6, 23, 0.26);
+  --shadow-button: 0 12px 24px rgba(2, 6, 23, 0.22);
+  --shadow-button-strong: 0 14px 30px rgba(2, 6, 23, 0.28);
+  --glass-highlight: rgba(255, 255, 255, 0.08);
+  --glass-edge: rgba(255, 255, 255, 0.08);
   --glass-inner-shadow: rgba(2, 6, 23, 0.08);
 }
 
@@ -217,12 +217,16 @@ a {
   z-index: 0;
   isolation: isolate;
   overflow: hidden;
-  background: rgba(250, 252, 253, 0.16);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.18), rgba(255, 255, 255, 0.04)),
+    var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--radius-md);
-  box-shadow: var(--shadow-soft);
-  backdrop-filter: blur(var(--blur-strength)) saturate(132%);
-  -webkit-backdrop-filter: blur(var(--blur-strength)) saturate(132%);
+  box-shadow:
+    var(--shadow-soft),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(var(--blur-strength)) saturate(144%);
+  -webkit-backdrop-filter: blur(var(--blur-strength)) saturate(144%);
 }
 
 .surface::before {
@@ -231,7 +235,9 @@ a {
   inset: 0;
   z-index: -1;
   border-radius: inherit;
-  background: rgba(255, 255, 255, 0.04);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.16), rgba(255, 255, 255, 0.02)),
+    radial-gradient(circle at 18% 0%, rgba(255, 255, 255, 0.16), transparent 36%);
   pointer-events: none;
 }
 
@@ -313,10 +319,12 @@ a {
 .nav-pill,
 .plain-button {
   border: 1px solid var(--border);
-  background: rgba(255, 255, 255, 0.24);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.18), rgba(255, 255, 255, 0.04)),
+    var(--surface-strong);
   color: var(--text-primary);
-  backdrop-filter: blur(calc(var(--blur-strength) * 0.8)) saturate(126%);
-  -webkit-backdrop-filter: blur(calc(var(--blur-strength) * 0.8)) saturate(126%);
+  backdrop-filter: blur(calc(var(--blur-strength) * 0.86)) saturate(138%);
+  -webkit-backdrop-filter: blur(calc(var(--blur-strength) * 0.86)) saturate(138%);
   box-shadow: var(--shadow-button);
 }
 
@@ -350,11 +358,13 @@ a {
 
 .solid-button {
   border: 1px solid rgba(255, 255, 255, 0.24);
-  background: rgba(var(--accent-rgb), 0.68);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.16), rgba(255, 255, 255, 0.02)),
+    rgba(var(--accent-rgb), 0.58);
   color: #fff;
   box-shadow: var(--shadow-button-strong);
-  backdrop-filter: blur(calc(var(--blur-strength) * 0.82)) saturate(124%);
-  -webkit-backdrop-filter: blur(calc(var(--blur-strength) * 0.82)) saturate(124%);
+  backdrop-filter: blur(calc(var(--blur-strength) * 0.92)) saturate(140%);
+  -webkit-backdrop-filter: blur(calc(var(--blur-strength) * 0.92)) saturate(140%);
 }
 
 .solid-button--danger {
@@ -383,16 +393,20 @@ a {
   padding: 0;
   border: 1px solid var(--border);
   border-radius: 50%;
-  background: rgba(255, 255, 255, 0.24);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.18), rgba(255, 255, 255, 0.04)),
+    var(--surface-strong);
   color: var(--text-primary);
-  backdrop-filter: blur(calc(var(--blur-strength) * 0.8)) saturate(126%);
-  -webkit-backdrop-filter: blur(calc(var(--blur-strength) * 0.8)) saturate(126%);
+  backdrop-filter: blur(calc(var(--blur-strength) * 0.86)) saturate(138%);
+  -webkit-backdrop-filter: blur(calc(var(--blur-strength) * 0.86)) saturate(138%);
   box-shadow: var(--shadow-button);
 }
 
 .icon-button--solid {
   border-color: rgba(255, 255, 255, 0.24);
-  background: rgba(var(--accent-rgb), 0.68);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.16), rgba(255, 255, 255, 0.02)),
+    rgba(var(--accent-rgb), 0.58);
   color: #fff;
   box-shadow: var(--shadow-button-strong);
 }
