@@ -48,34 +48,52 @@ async function checkForUpdates() {
   isCheckingUpdate.value = true
   updateError.value = ''
   
+  const mirrors = [
+    { name: 'GitHub 直接', url: 'https://api.github.com/repos/341602/boai/releases/latest' },
+    { name: '镜像 1', url: 'https://gh.api.99988866.xyz/https://api.github.com/repos/341602/boai/releases/latest' },
+    { name: '镜像 2', url: 'https://ghproxy.net/https://api.github.com/repos/341602/boai/releases/latest' },
+    { name: '镜像 3', url: 'https://mirror.ghproxy.com/https://api.github.com/repos/341602/boai/releases/latest' },
+    { name: '镜像 4', url: 'https://gh.api.99988866.xyz/https://api.github.com/repos/341602/boai/releases/latest' }
+  ]
+  
   try {
-    const controller = new AbortController()
-    const timeoutId = setTimeout(() => controller.abort(), 10000)
-    
-    // 尝试直接访问 GitHub
     let response
-    try {
-      response = await fetch('https://api.github.com/repos/341602/boai/releases/latest', {
-        signal: controller.signal
-      })
-    } catch (directError) {
-      console.log('直接访问 GitHub 失败，尝试使用镜像...')
-      // 如果直接访问失败，尝试使用镜像
-      response = await fetch('https://gh.api.99988866.xyz/https://api.github.com/repos/341602/boai/releases/latest', {
-        signal: controller.signal
-      })
+    let lastError
+    
+    for (const mirror of mirrors) {
+      try {
+        console.log(`尝试使用 ${mirror.name}...`)
+        const controller = new AbortController()
+        const timeoutId = setTimeout(() => controller.abort(), 8000)
+        
+        response = await fetch(mirror.url, {
+          signal: controller.signal
+        })
+        
+        clearTimeout(timeoutId)
+        
+        if (response.ok) {
+          console.log(`成功使用 ${mirror.name}`)
+          break
+        }
+      } catch (err) {
+        lastError = err
+        console.log(`${mirror.name} 失败，尝试下一个...`)
+        continue
+      }
     }
     
-    clearTimeout(timeoutId)
+    if (!response || !response.ok) {
+      if (lastError) {
+        throw lastError
+      }
+      throw new Error('所有镜像都无法访问')
+    }
     
     if (response.status === 404) {
       // 没有发布的 releases
       alert(TEXTS.settingsUpdateNoReleases)
       return
-    }
-    
-    if (!response.ok) {
-      throw new Error('Network response was not ok')
     }
     
     const data = await response.json()
