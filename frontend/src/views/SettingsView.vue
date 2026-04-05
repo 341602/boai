@@ -1,59 +1,45 @@
 <script setup>
 import { computed, ref } from 'vue'
-import { Check, Disc3, House, ListMusic, Monitor, MoonStar, Settings2, SunMedium } from 'lucide-vue-next'
+import { Check, Disc3, Download, House, Info, ListMusic, Palette, MoonStar, Settings2, SunMedium, X } from 'lucide-vue-next'
 import appPackage from '../../package.json'
 import { THEME_MODES, useThemePreference } from '../composables/useThemePreference'
 import { TEXTS } from '../constants/texts'
 
-const { resolvedTheme, setThemePreference, systemTheme, themePreference } = useThemePreference()
+const { resolvedTheme, setThemePreference, themePreference } = useThemePreference()
 
 const themeOptions = [
   {
     value: THEME_MODES.system,
     label: TEXTS.settingsThemeSystem,
-    copy: TEXTS.settingsThemeSystemCopy,
-    icon: Monitor,
+    icon: Palette,
   },
   {
     value: THEME_MODES.light,
     label: TEXTS.settingsThemeLight,
-    copy: TEXTS.settingsThemeLightCopy,
     icon: SunMedium,
   },
   {
     value: THEME_MODES.dark,
     label: TEXTS.settingsThemeDark,
-    copy: TEXTS.settingsThemeDarkCopy,
     icon: MoonStar,
   },
 ]
 
-const themeLabelMap = {
-  [THEME_MODES.system]: TEXTS.settingsResolvedSystem,
-  [THEME_MODES.light]: TEXTS.settingsResolvedLight,
-  [THEME_MODES.dark]: TEXTS.settingsResolvedDark,
-}
-
-const currentThemeLabel = computed(() => themeLabelMap[resolvedTheme.value] || TEXTS.settingsResolvedLight)
-const systemThemeLabel = computed(() => themeLabelMap[systemTheme.value] || TEXTS.settingsResolvedLight)
 const versionLabel = computed(() => `v${appPackage.version || '0.0.0'}`)
 
-// 更新检查相关状态
 const isCheckingUpdate = ref(false)
 const updateAvailable = ref(false)
 const latestVersion = ref('')
-const updateError = ref('')
+const showAboutModal = ref(false)
 
 async function checkForUpdates() {
   isCheckingUpdate.value = true
-  updateError.value = ''
   
   const mirrors = [
     { name: 'GitHub 直接', url: 'https://api.github.com/repos/341602/boai/releases/latest' },
     { name: '镜像 1', url: 'https://gh.api.99988866.xyz/https://api.github.com/repos/341602/boai/releases/latest' },
     { name: '镜像 2', url: 'https://ghproxy.net/https://api.github.com/repos/341602/boai/releases/latest' },
     { name: '镜像 3', url: 'https://mirror.ghproxy.com/https://api.github.com/repos/341602/boai/releases/latest' },
-    { name: '镜像 4', url: 'https://gh.api.99988866.xyz/https://api.github.com/repos/341602/boai/releases/latest' }
   ]
   
   try {
@@ -62,36 +48,25 @@ async function checkForUpdates() {
     
     for (const mirror of mirrors) {
       try {
-        console.log(`尝试使用 ${mirror.name}...`)
         const controller = new AbortController()
         const timeoutId = setTimeout(() => controller.abort(), 8000)
         
-        response = await fetch(mirror.url, {
-          signal: controller.signal
-        })
-        
+        response = await fetch(mirror.url, { signal: controller.signal })
         clearTimeout(timeoutId)
         
-        if (response.ok) {
-          console.log(`成功使用 ${mirror.name}`)
-          break
-        }
+        if (response.ok) break
       } catch (err) {
         lastError = err
-        console.log(`${mirror.name} 失败，尝试下一个...`)
         continue
       }
     }
     
     if (!response || !response.ok) {
-      if (lastError) {
-        throw lastError
-      }
+      if (lastError) throw lastError
       throw new Error('所有镜像都无法访问')
     }
     
     if (response.status === 404) {
-      // 没有发布的 releases
       alert(TEXTS.settingsUpdateNoReleases)
       return
     }
@@ -119,7 +94,6 @@ async function checkForUpdates() {
 }
 
 function updateApp() {
-  // 刷新页面获取最新版本
   location.reload()
 }
 
@@ -128,7 +102,6 @@ function dismissUpdate() {
   latestVersion.value = ''
 }
 
-// 版本号比较函数
 function compareVersions(version1, version2) {
   const v1 = version1.split('.').map(Number)
   const v2 = version2.split('.').map(Number)
@@ -179,11 +152,9 @@ function compareVersions(version1, version2) {
 
     <div class="settings-layout">
       <section class="surface section-card settings-section">
-        <header class="section-card__header settings-section__header">
-          <div>
-            <h2>{{ TEXTS.settingsAppearanceTitle }}</h2>
-            <p class="section-card__subtitle">{{ TEXTS.settingsAppearanceCopy }}</p>
-          </div>
+        <header class="section-card__header">
+          <Palette class="button-icon" />
+          <h2>主题</h2>
         </header>
 
         <div class="settings-choice-list">
@@ -195,82 +166,219 @@ function compareVersions(version1, version2) {
             type="button"
             @click="setThemePreference(option.value)"
           >
-            <span class="settings-choice__icon">
-              <component :is="option.icon" class="button-icon" />
-            </span>
-            <div class="settings-choice__meta">
-              <strong>{{ option.label }}</strong>
-              <p>{{ option.copy }}</p>
-            </div>
+            <component :is="option.icon" class="button-icon" />
+            <span>{{ option.label }}</span>
             <Check v-if="themePreference === option.value" class="button-icon" />
           </button>
         </div>
       </section>
 
-      <section class="surface section-card settings-section">
-        <header class="section-card__header settings-section__header">
-          <div>
-            <h2>{{ TEXTS.settingsStatusTitle }}</h2>
-            <p class="section-card__subtitle">{{ TEXTS.settingsStatusCopy }}</p>
-          </div>
+      <section class="surface section-card settings-section about-section" @click="showAboutModal = true">
+        <header class="section-card__header">
+          <Info class="button-icon" />
+          <h2>关于应用</h2>
+        </header>
+      </section>
+    </div>
+
+    <div v-if="showAboutModal" class="modal-overlay" @click.self="showAboutModal = false">
+      <div class="modal">
+        <header class="modal-header">
+          <h2>关于应用</h2>
+          <button class="plain-button" @click="showAboutModal = false">
+            <X class="button-icon" />
+          </button>
         </header>
 
-        <div class="settings-row-list">
-          <div class="settings-row">
-            <div class="settings-row__meta">
-              <strong>{{ TEXTS.settingsCurrentTheme }}</strong>
-              <p>{{ TEXTS.settingsCurrentThemeCopy }}</p>
+        <div class="modal-content">
+          <div class="app-info">
+            <div class="app-icon">
+              <Disc3 class="button-icon" />
             </div>
-            <span class="settings-row__value">{{ currentThemeLabel }}</span>
+            <h3 class="app-name">博爱音乐</h3>
+            <p class="app-version">{{ versionLabel }}</p>
           </div>
 
-          <div class="settings-row">
-            <div class="settings-row__meta">
-              <strong>{{ TEXTS.settingsSystemTheme }}</strong>
-              <p>{{ TEXTS.settingsSystemThemeCopy }}</p>
-            </div>
-            <span class="settings-row__value">{{ systemThemeLabel }}</span>
-          </div>
-
-          <div class="settings-row">
-            <div class="settings-row__meta">
-              <strong>{{ TEXTS.settingsVersionLabel }}</strong>
-              <p>{{ TEXTS.settingsVersionCopy }}</p>
-            </div>
-            <span class="settings-row__value">{{ versionLabel }}</span>
-          </div>
-
-          <div class="settings-row">
-            <div class="settings-row__meta">
-              <strong>{{ TEXTS.settingsUpdateLabel }}</strong>
-              <p>{{ TEXTS.settingsUpdateCopy }}</p>
-            </div>
+          <div class="app-actions">
             <button 
-              class="plain-button" 
+              class="solid-button update-button" 
               :disabled="isCheckingUpdate"
               @click="checkForUpdates"
             >
-              {{ isCheckingUpdate ? TEXTS.settingsUpdateChecking : TEXTS.settingsUpdateButton }}
+              <Download v-if="!isCheckingUpdate" class="button-icon" />
+              <span>{{ isCheckingUpdate ? TEXTS.settingsUpdateChecking : TEXTS.settingsUpdateButton }}</span>
             </button>
-          </div>
 
-          <!-- 更新提示 -->
-          <div v-if="updateAvailable" class="settings-row settings-row--update">
-            <div class="settings-row__meta">
-              <strong>{{ TEXTS.settingsUpdateAvailable }}: v{{ latestVersion }}</strong>
-              <p>{{ versionLabel }} → v{{ latestVersion }}</p>
-            </div>
-            <div class="settings-row__actions">
-              <button class="plain-button" @click="dismissUpdate">
-                {{ TEXTS.settingsUpdateButtonLater }}
-              </button>
-              <button class="solid-button" @click="updateApp">
-                {{ TEXTS.settingsUpdateButtonUpdate }}
-              </button>
+            <div v-if="updateAvailable" class="update-info">
+              <p><strong>{{ TEXTS.settingsUpdateAvailable }}: v{{ latestVersion }}</strong></p>
+              <div class="update-actions">
+                <button class="plain-button" @click="dismissUpdate">
+                  {{ TEXTS.settingsUpdateButtonLater }}
+                </button>
+                <button class="solid-button" @click="updateApp">
+                  {{ TEXTS.settingsUpdateButtonUpdate }}
+                </button>
+              </div>
             </div>
           </div>
         </div>
-      </section>
+      </div>
     </div>
   </div>
 </template>
+
+<style scoped>
+.section-card__header {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.section-card__header .button-icon {
+  color: var(--text-subtle);
+}
+
+.settings-choice {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.875rem 1rem;
+  border-radius: 0.75rem;
+  background: transparent;
+  border: 1px solid var(--border-subtle);
+  color: var(--text-primary);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.settings-choice:hover {
+  background: var(--surface-hover);
+}
+
+.settings-choice--active {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+
+.settings-choice--active .button-icon:last-child {
+  color: var(--accent);
+}
+
+.about-section {
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.about-section:hover {
+  background: var(--surface-hover);
+}
+
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 1rem;
+}
+
+.modal {
+  background: color-mix(in srgb, var(--surface) 85%, transparent);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-radius: 1rem;
+  max-width: 400px;
+  width: 100%;
+  max-height: 90vh;
+  overflow: hidden;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+}
+
+.modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem 1.25rem;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.modal-header h2 {
+  margin: 0;
+  font-size: 1.125rem;
+  font-weight: 600;
+}
+
+.modal-content {
+  padding: 1.5rem 1.25rem;
+}
+
+.app-info {
+  text-align: center;
+  margin-bottom: 1.5rem;
+}
+
+.app-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 5rem;
+  height: 5rem;
+  background: var(--accent-soft);
+  border-radius: 1.5rem;
+  margin-bottom: 1rem;
+}
+
+.app-icon .button-icon {
+  width: 2.5rem;
+  height: 2.5rem;
+  color: var(--accent);
+}
+
+.app-name {
+  margin: 0 0 0.5rem 0;
+  font-size: 1.25rem;
+  font-weight: 600;
+}
+
+.app-version {
+  margin: 0;
+  color: var(--text-subtle);
+  font-size: 0.875rem;
+}
+
+.app-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.update-button {
+  width: auto;
+  min-width: 8rem;
+  padding: 0.75rem 1.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  margin: 0 auto;
+}
+
+.update-info {
+  padding: 1rem;
+  background: var(--accent-soft);
+  border: 1px solid var(--accent);
+  border-radius: 0.75rem;
+}
+
+.update-info p {
+  margin: 0 0 0.75rem 0;
+}
+
+.update-actions {
+  display: flex;
+  gap: 0.75rem;
+  justify-content: flex-end;
+}
+</style>
