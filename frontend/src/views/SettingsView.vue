@@ -49,7 +49,24 @@ async function checkForUpdates() {
   updateError.value = ''
   
   try {
-    const response = await fetch('https://ghproxy.com/https://api.github.com/repos/341602/boai/releases/latest')
+    const controller = new AbortController()
+    const timeoutId = setTimeout(() => controller.abort(), 10000)
+    
+    // 尝试直接访问 GitHub
+    let response
+    try {
+      response = await fetch('https://api.github.com/repos/341602/boai/releases/latest', {
+        signal: controller.signal
+      })
+    } catch (directError) {
+      console.log('直接访问 GitHub 失败，尝试使用镜像...')
+      // 如果直接访问失败，尝试使用镜像
+      response = await fetch('https://gh.api.99988866.xyz/https://api.github.com/repos/341602/boai/releases/latest', {
+        signal: controller.signal
+      })
+    }
+    
+    clearTimeout(timeoutId)
     
     if (response.status === 404) {
       // 没有发布的 releases
@@ -73,7 +90,11 @@ async function checkForUpdates() {
     }
   } catch (error) {
     console.error('检查更新失败:', error)
-    alert(TEXTS.settingsUpdateFailed)
+    if (error.name === 'AbortError') {
+      alert('请求超时，请稍后重试')
+    } else {
+      alert(TEXTS.settingsUpdateFailed)
+    }
   } finally {
     isCheckingUpdate.value = false
   }
