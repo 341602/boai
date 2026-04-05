@@ -74,17 +74,16 @@ jobs:
 
       - name: Create GitHub Release
         if: startsWith(github.ref, 'refs/tags/')
-        shell: bash
+        uses: softprops/action-gh-release@v2
+        with:
+          files: frontend/android/app/build/outputs/apk/debug/app-debug.apk
+          name: Release ${{ steps.get_version.outputs.version }}
+          tag_name: ${{ github.ref_name }}
+          generate_release_notes: true
+          overwrite_files: true
+          make_latest: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          VERSION: ${{ steps.get_version.outputs.version }}
-        run: |
-          ls -la frontend/android/app/build/outputs/apk/debug/
-          gh release create "v${VERSION}" \
-            --title "Release v${VERSION}" \
-            --generate-notes \
-            "frontend/android/app/build/outputs/apk/debug/app-debug.apk" \
-            || echo "Release creation failed, but APK was built"
 
       - name: Upload debug artifacts
         uses: actions/upload-artifact@v4
