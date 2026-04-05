@@ -73,17 +73,16 @@ jobs:
           echo "version=$VERSION" >> $GITHUB_OUTPUT
 
       - name: Create GitHub Release
-        uses: softprops/action-gh-release@v2
         if: startsWith(github.ref, 'refs/tags/')
-        with:
-          files: |
-            frontend/android/app/build/outputs/apk/debug/app-debug.apk
-          name: Release v${{ steps.get_version.outputs.version }}
-          tag_name: v${{ steps.get_version.outputs.version }}
-          generate_release_notes: true
-          overwrite_files: true
+        shell: bash
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          VERSION: ${{ steps.get_version.outputs.version }}
+        run: |
+          gh release create "v${VERSION}" \
+            --title "Release v${VERSION}" \
+            --generate-notes \
+            "frontend/android/app/build/outputs/apk/debug/app-debug.apk"
 
       - name: Upload debug artifacts
         uses: actions/upload-artifact@v4
