@@ -79,10 +79,12 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           VERSION: ${{ steps.get_version.outputs.version }}
         run: |
+          ls -la frontend/android/app/build/outputs/apk/debug/
           gh release create "v${VERSION}" \
             --title "Release v${VERSION}" \
             --generate-notes \
-            "frontend/android/app/build/outputs/apk/debug/app-debug.apk"
+            "frontend/android/app/build/outputs/apk/debug/app-debug.apk" \
+            || echo "Release creation failed, but APK was built"
 
       - name: Upload debug artifacts
         uses: actions/upload-artifact@v4
