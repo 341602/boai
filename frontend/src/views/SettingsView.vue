@@ -36,9 +36,11 @@ async function checkForUpdates() {
   isCheckingUpdate.value = true
   
   const mirrors = [
-    { name: '镜像 1', url: 'https://ghproxy.net/https://api.github.com/repos/341602/boai/releases/latest' },
-    { name: '镜像 2', url: 'https://mirror.ghproxy.com/https://api.github.com/repos/341602/boai/releases/latest' },
-    { name: '镜像 3', url: 'https://gh.api.99988866.xyz/https://api.github.com/repos/341602/boai/releases/latest' },
+    { name: 'ghproxy.net', url: 'https://ghproxy.net/https://api.github.com/repos/341602/boai/releases/latest' },
+    { name: 'mirror.ghproxy.com', url: 'https://mirror.ghproxy.com/https://api.github.com/repos/341602/boai/releases/latest' },
+    { name: 'gh-proxy.com', url: 'https://gh-proxy.com/https://api.github.com/repos/341602/boai/releases/latest' },
+    { name: 'moeyy.cn', url: 'https://moeyy.cn/gh-proxy/https://api.github.com/repos/341602/boai/releases/latest' },
+    { name: 'ghp.ci', url: 'https://ghp.ci/https://api.github.com/repos/341602/boai/releases/latest' },
     { name: 'GitHub 直接', url: 'https://api.github.com/repos/341602/boai/releases/latest' },
   ]
   
