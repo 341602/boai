@@ -36,26 +36,34 @@ async function checkForUpdates() {
   isCheckingUpdate.value = true
   
   const mirrors = [
+    { name: '镜像 1', url: 'https://ghproxy.net/https://api.github.com/repos/341602/boai/releases/latest' },
+    { name: '镜像 2', url: 'https://mirror.ghproxy.com/https://api.github.com/repos/341602/boai/releases/latest' },
+    { name: '镜像 3', url: 'https://gh.api.99988866.xyz/https://api.github.com/repos/341602/boai/releases/latest' },
     { name: 'GitHub 直接', url: 'https://api.github.com/repos/341602/boai/releases/latest' },
-    { name: '镜像 1', url: 'https://gh.api.99988866.xyz/https://api.github.com/repos/341602/boai/releases/latest' },
-    { name: '镜像 2', url: 'https://ghproxy.net/https://api.github.com/repos/341602/boai/releases/latest' },
-    { name: '镜像 3', url: 'https://mirror.ghproxy.com/https://api.github.com/repos/341602/boai/releases/latest' },
   ]
   
   try {
     let response
     let lastError
+    let usedMirror = ''
     
     for (const mirror of mirrors) {
       try {
+        console.log(`尝试使用 ${mirror.name}...`)
         const controller = new AbortController()
-        const timeoutId = setTimeout(() => controller.abort(), 8000)
+        const timeoutId = setTimeout(() => controller.abort(), 15000)
         
         response = await fetch(mirror.url, { signal: controller.signal })
         clearTimeout(timeoutId)
         
-        if (response.ok) break
+        console.log(`${mirror.name} 响应状态:`, response.status)
+        
+        if (response.ok) {
+          usedMirror = mirror.name
+          break
+        }
       } catch (err) {
+        console.log(`${mirror.name} 失败:`, err)
         lastError = err
         continue
       }
@@ -66,14 +74,20 @@ async function checkForUpdates() {
       throw new Error('所有镜像都无法访问')
     }
     
+    console.log(`成功使用: ${usedMirror}`)
+    
     if (response.status === 404) {
       alert(TEXTS.settingsUpdateNoReleases)
       return
     }
     
     const data = await response.json()
+    console.log('Release 数据:', data)
+    
     const latestTag = data.tag_name.replace('v', '')
     const currentVersion = appPackage.version || '0.0.0'
+    
+    console.log('最新版本:', latestTag, '当前版本:', currentVersion)
     
     if (compareVersions(latestTag, currentVersion) > 0) {
       updateAvailable.value = true
