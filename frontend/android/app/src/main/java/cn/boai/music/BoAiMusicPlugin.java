@@ -71,6 +71,8 @@ public class BoAiMusicPlugin extends Plugin {
     private int activeUpdateUrlIndex = 0;
     private String activeUpdateFileName = "boai-music-update.apk";
     private Uri pendingInstallUri = null;
+    private String currentUpdateStatus = "idle";
+    private String currentUpdateMessage = "";
 
     @Override
     public void load() {
@@ -251,6 +253,22 @@ public class BoAiMusicPlugin extends Plugin {
             call.resolve(result);
         } catch (Exception error) {
             call.reject("Failed to open installer", error);
+        }
+    }
+
+    @PluginMethod
+    public void getUpdateStatus(PluginCall call) {
+        JSObject result = new JSObject();
+
+        try {
+            syncUpdateStatusFromDownloadManager();
+            result.put("status", currentUpdateStatus);
+            result.put("message", currentUpdateMessage == null ? "" : currentUpdateMessage);
+            result.put("hasDownloadedUpdate", pendingInstallUri != null);
+            result.put("downloadId", activeUpdateDownloadId);
+            call.resolve(result);
+        } catch (Exception error) {
+            call.reject("Failed to get update status", error);
         }
     }
 
@@ -451,6 +469,49 @@ public class BoAiMusicPlugin extends Plugin {
         return downloadManager.getUriForDownloadedFile(downloadId);
     }
 
+    private void syncUpdateStatusFromDownloadManager() {
+        if (downloadManager == null || activeUpdateDownloadId == -1L) {
+            return;
+        }
+
+        DownloadManager.Query query = new DownloadManager.Query().setFilterById(activeUpdateDownloadId);
+
+        try (Cursor cursor = downloadManager.query(query)) {
+            if (cursor == null || !cursor.moveToFirst()) {
+                return;
+            }
+
+            int status = cursor.getInt(cursor.getColumnIndexOrThrow(DownloadManager.COLUMN_STATUS));
+
+            if (status == DownloadManager.STATUS_SUCCESSFUL) {
+                Uri installUri = resolveInstallUri(cursor, activeUpdateDownloadId);
+
+                if (installUri != null) {
+                    pendingInstallUri = installUri;
+                    currentUpdateStatus = "downloaded";
+                    currentUpdateMessage = "";
+                }
+
+                return;
+            }
+
+            if (
+                status == DownloadManager.STATUS_PENDING ||
+                status == DownloadManager.STATUS_PAUSED ||
+                status == DownloadManager.STATUS_RUNNING
+            ) {
+                currentUpdateStatus = "downloading";
+                return;
+            }
+
+            if (status == DownloadManager.STATUS_FAILED) {
+                currentUpdateStatus = "failed";
+            }
+        } catch (Exception ignored) {
+            // Keep the last known update status.
+        }
+    }
+
     private boolean startNextUpdateDownload() {
         if (downloadManager == null) {
             return false;
@@ -563,6 +624,9 @@ public class BoAiMusicPlugin extends Plugin {
     }
 
     private void notifyUpdateStatus(String status, String message) {
+        currentUpdateStatus = status == null ? "idle" : status;
+        currentUpdateMessage = message == null ? "" : message;
+
         JSObject payload = new JSObject();
         payload.put("status", status);
         payload.put("message", message == null ? "" : message);

@@ -33,7 +33,9 @@ const versionCode = ref(0)
 const isDebugBuild = ref(false)
 const isCheckingUpdate = ref(false)
 const isStartingUpdate = ref(false)
+const isOpeningInstaller = ref(false)
 const updateAvailable = ref(false)
+const hasDownloadedUpdate = ref(false)
 const latestVersion = ref('')
 const latestDownloadCandidates = ref([])
 const latestDownloadName = ref('')
@@ -41,11 +43,9 @@ const latestReleaseNotes = ref('')
 const latestSourceLabel = ref('')
 const showAboutModal = ref(false)
 const appUpdateMessage = ref('')
-const hasDownloadedUpdate = ref(false)
-const isOpeningInstaller = ref(false)
 
 let updateListenerHandle = null
-let installRetryListenerHandle = null
+let updatePollingTimer = null
 
 function normalizeVersion(rawVersion = '') {
   return String(rawVersion).trim().replace(/^v/i, '')
@@ -70,6 +70,24 @@ function currentVersion() {
   return normalizeVersion(versionLabel.value) || normalizeVersion(appPackage.version) || '0.0.0'
 }
 
+function clearUpdateStatusPolling() {
+  if (updatePollingTimer) {
+    clearInterval(updatePollingTimer)
+    updatePollingTimer = null
+  }
+}
+
+function dismissUpdate() {
+  updateAvailable.value = false
+  latestVersion.value = ''
+  latestDownloadCandidates.value = []
+  latestDownloadName.value = ''
+  latestReleaseNotes.value = ''
+  latestSourceLabel.value = ''
+  appUpdateMessage.value = ''
+  hasDownloadedUpdate.value = false
+}
+
 async function loadNativeAppInfo() {
   if (!isNativeApp.value) {
     return
@@ -85,6 +103,77 @@ async function loadNativeAppInfo() {
   }
 }
 
+async function openDownloadedUpdate() {
+  if (!isNativeApp.value || !hasDownloadedUpdate.value) {
+    return
+  }
+
+  isOpeningInstaller.value = true
+
+  try {
+    await invokeNative('openDownloadedUpdate', {})
+    appUpdateMessage.value = '请在系统安装界面确认升级。'
+  } catch (error) {
+    console.error('打开安装界面失败:', error)
+    alert(error?.message || '打开安装界面失败，请稍后重试')
+  } finally {
+    isOpeningInstaller.value = false
+  }
+}
+
+async function syncNativeUpdateStatus() {
+  if (!isNativeApp.value) {
+    return
+  }
+
+  try {
+    const payload = await invokeNative('getUpdateStatus', {})
+    const status = payload?.status || 'idle'
+    const message = payload?.message || ''
+    const readyToInstall = Boolean(payload?.hasDownloadedUpdate)
+
+    if (status === 'downloading') {
+      hasDownloadedUpdate.value = false
+      appUpdateMessage.value = '正在下载更新包，请稍候。'
+      return
+    }
+
+    if (status === 'downloaded') {
+      hasDownloadedUpdate.value = readyToInstall
+      appUpdateMessage.value = '更新包已下载完成，正在打开安装界面。'
+
+      if (readyToInstall) {
+        await openDownloadedUpdate()
+      }
+
+      clearUpdateStatusPolling()
+      return
+    }
+
+    if (status === 'installing') {
+      hasDownloadedUpdate.value = readyToInstall
+      appUpdateMessage.value = '请在系统安装界面确认升级。'
+      clearUpdateStatusPolling()
+      return
+    }
+
+    if (status === 'failed') {
+      hasDownloadedUpdate.value = readyToInstall
+      appUpdateMessage.value = message || '更新失败，请稍后重试。'
+      clearUpdateStatusPolling()
+    }
+  } catch (error) {
+    console.warn('同步更新状态失败:', error)
+  }
+}
+
+function startUpdateStatusPolling() {
+  clearUpdateStatusPolling()
+  updatePollingTimer = setInterval(() => {
+    void syncNativeUpdateStatus()
+  }, 1000)
+}
+
 async function checkForUpdates() {
   isCheckingUpdate.value = true
   appUpdateMessage.value = ''
@@ -94,7 +183,7 @@ async function checkForUpdates() {
 
     if (compareVersions(releaseInfo.versionName, currentVersion()) <= 0) {
       updateAvailable.value = false
-      alert(TEXTS.settingsUpdateUpToDate || '当前已经是最新版本')
+      alert(TEXTS.settingsUpdateUpToDate)
       return
     }
 
@@ -106,7 +195,7 @@ async function checkForUpdates() {
     updateAvailable.value = true
   } catch (error) {
     console.error('检查更新失败:', error)
-    alert(error?.message || TEXTS.settingsUpdateFailed || '检查更新失败，请稍后重试')
+    alert(error?.message || TEXTS.settingsUpdateFailed)
   } finally {
     isCheckingUpdate.value = false
   }
@@ -144,6 +233,7 @@ async function updateApp() {
       fileName: latestDownloadName.value || `boai-music-v${latestVersion.value}.apk`,
     })
 
+    startUpdateStatusPolling()
     appUpdateMessage.value = '更新包开始下载，完成后会自动打开安装界面。'
   } catch (error) {
     console.error('启动更新失败:', error)
@@ -151,35 +241,6 @@ async function updateApp() {
   } finally {
     isStartingUpdate.value = false
   }
-}
-
-async function openDownloadedUpdate() {
-  if (!isNativeApp.value || !hasDownloadedUpdate.value) {
-    return
-  }
-
-  isOpeningInstaller.value = true
-
-  try {
-    await invokeNative('openDownloadedUpdate', {})
-    appUpdateMessage.value = '请在系统安装界面确认升级。'
-  } catch (error) {
-    console.error('打开安装界面失败:', error)
-    alert(error?.message || '打开安装界面失败，请稍后重试')
-  } finally {
-    isOpeningInstaller.value = false
-  }
-}
-
-function dismissUpdate() {
-  updateAvailable.value = false
-  latestVersion.value = ''
-  latestDownloadCandidates.value = []
-  latestDownloadName.value = ''
-  latestReleaseNotes.value = ''
-  latestSourceLabel.value = ''
-  appUpdateMessage.value = ''
-  hasDownloadedUpdate.value = false
 }
 
 async function setupUpdateStatusListener() {
@@ -195,12 +256,14 @@ async function setupUpdateStatusListener() {
 
   updateListenerHandle = await bridge.addListener('appUpdateStatus', ({ status, message }) => {
     if (status === 'downloading') {
+      hasDownloadedUpdate.value = false
       appUpdateMessage.value = '正在下载更新包，请稍候。'
       return
     }
 
     if (status === 'downloaded') {
-      appUpdateMessage.value = '更新包已下载完成，正在打开安装界面。'
+      hasDownloadedUpdate.value = true
+      appUpdateMessage.value = '更新包已下载完成，等待安装。'
       return
     }
 
@@ -217,55 +280,20 @@ async function setupUpdateStatusListener() {
   })
 }
 
-async function setupInstallRetryListener() {
-  if (!isNativeApp.value) {
-    return
-  }
-
-  const bridge = getNativeBridge()
-
-  if (!bridge?.addListener) {
-    return
-  }
-
-  installRetryListenerHandle = await bridge.addListener('appUpdateStatus', async ({ status }) => {
-    if (status === 'downloading') {
-      hasDownloadedUpdate.value = false
-      appUpdateMessage.value = '正在下载更新包，请稍候。'
-      return
-    }
-
-    if (status === 'downloaded') {
-      hasDownloadedUpdate.value = true
-      appUpdateMessage.value = '更新包已下载完成，正在打开安装界面。'
-      await openDownloadedUpdate()
-      return
-    }
-
-    if (status === 'installing') {
-      appUpdateMessage.value = '请在系统安装界面确认升级。'
-    }
-  })
-}
-
 onMounted(async () => {
   await loadNativeAppInfo()
   await setupUpdateStatusListener()
-  await setupInstallRetryListener()
+  await syncNativeUpdateStatus()
 })
 
 onBeforeUnmount(async () => {
+  clearUpdateStatusPolling()
+
   if (updateListenerHandle?.remove) {
     await updateListenerHandle.remove()
   }
 
   updateListenerHandle = null
-
-  if (installRetryListenerHandle?.remove) {
-    await installRetryListenerHandle.remove()
-  }
-
-  installRetryListenerHandle = null
 })
 </script>
 
@@ -295,7 +323,7 @@ onBeforeUnmount(async () => {
       <section class="surface section-card settings-section">
         <header class="section-card__header">
           <Palette class="button-icon" />
-          <h2>主题</h2>
+          <h2>{{ TEXTS.settingsAppearanceTitle }}</h2>
         </header>
 
         <div class="settings-choice-list">
@@ -326,7 +354,7 @@ onBeforeUnmount(async () => {
       <div class="modal">
         <header class="modal-header">
           <h2>关于应用</h2>
-          <button class="plain-button" @click="showAboutModal = false">
+          <button class="plain-button" type="button" @click="showAboutModal = false">
             <X class="button-icon" />
           </button>
         </header>
@@ -345,25 +373,26 @@ onBeforeUnmount(async () => {
           </div>
 
           <div class="app-actions">
-            <button class="solid-button update-button" :disabled="isCheckingUpdate" @click="checkForUpdates">
+            <button class="solid-button update-button" type="button" :disabled="isCheckingUpdate" @click="checkForUpdates">
               <Download v-if="!isCheckingUpdate" class="button-icon" />
               <span>{{ isCheckingUpdate ? TEXTS.settingsUpdateChecking : TEXTS.settingsUpdateButton }}</span>
             </button>
 
             <div v-if="updateAvailable" class="update-info">
-              <p><strong>{{ TEXTS.settingsUpdateAvailable || '发现新版本' }}: v{{ latestVersion }}</strong></p>
+              <p><strong>{{ TEXTS.settingsUpdateAvailable }}: v{{ latestVersion }}</strong></p>
               <p v-if="latestSourceLabel" class="update-meta">更新源：{{ latestSourceLabel }}</p>
               <p v-if="latestReleaseNotes" class="update-notes">{{ latestReleaseNotes }}</p>
               <div class="update-actions">
-                <button class="plain-button" @click="dismissUpdate">
+                <button class="plain-button" type="button" @click="dismissUpdate">
                   {{ TEXTS.settingsUpdateButtonLater }}
                 </button>
-                <button class="solid-button" :disabled="isStartingUpdate" @click="updateApp">
+                <button class="solid-button" type="button" :disabled="isStartingUpdate" @click="updateApp">
                   {{ isStartingUpdate ? '准备中...' : TEXTS.settingsUpdateButtonUpdate }}
                 </button>
                 <button
                   v-if="hasDownloadedUpdate"
                   class="solid-button"
+                  type="button"
                   :disabled="isOpeningInstaller"
                   @click="openDownloadedUpdate"
                 >
@@ -559,5 +588,6 @@ onBeforeUnmount(async () => {
   display: flex;
   gap: 0.75rem;
   justify-content: flex-end;
+  flex-wrap: wrap;
 }
 </style>
