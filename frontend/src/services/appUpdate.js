@@ -6,7 +6,9 @@ const RELEASES_LATEST_API = `https://api.github.com/repos/${REPOSITORY}/releases
 const RELEASES_LATEST_UPDATE_JSON = `https://github.com/${REPOSITORY}/releases/latest/download/update.json`
 const REPOSITORY_UPDATE_JSON = `https://raw.githubusercontent.com/${REPOSITORY}/main/app-updates/update.json`
 const JSDELIVR_UPDATE_JSON = `https://cdn.jsdelivr.net/gh/${REPOSITORY}@main/app-updates/update.json`
-const REQUEST_TIMEOUT_MS = 15000
+
+const PRIMARY_REQUEST_TIMEOUT_MS = 5000
+const FALLBACK_REQUEST_TIMEOUT_MS = 8000
 
 const DEFAULT_PROXY_PREFIXES = [
   'https://ghproxy.net/',
@@ -49,27 +51,16 @@ function normalizeVersion(rawVersion = '') {
   return String(rawVersion).trim().replace(/^v/i, '')
 }
 
-function compareVersions(version1, version2) {
-  const left = normalizeVersion(version1).split('.').map((item) => Number(item || 0))
-  const right = normalizeVersion(version2).split('.').map((item) => Number(item || 0))
-
-  for (let index = 0; index < Math.max(left.length, right.length); index += 1) {
-    const leftValue = left[index] || 0
-    const rightValue = right[index] || 0
-
-    if (leftValue > rightValue) return 1
-    if (leftValue < rightValue) return -1
-  }
-
-  return 0
+export function isNativeAppRuntime() {
+  return getRuntimeTarget() === RUNTIME_TARGETS.native
 }
 
 export function getUpdateManifestSources() {
   const config = getRuntimeConfig()
   const configured = toArray(config.UPDATE_MANIFEST_URLS)
   const mirroredStable = DEFAULT_PROXY_PREFIXES.flatMap((prefix) => [
-    `${prefix}${REPOSITORY_UPDATE_JSON}`,
     `${prefix}${JSDELIVR_UPDATE_JSON}`,
+    `${prefix}${REPOSITORY_UPDATE_JSON}`,
   ])
   const mirroredLatest = DEFAULT_PROXY_PREFIXES.map((prefix) => `${prefix}${RELEASES_LATEST_UPDATE_JSON}`)
 
@@ -120,7 +111,7 @@ function parseJsonPayload(data) {
   return data
 }
 
-async function nativeRequestJson(url) {
+async function nativeRequestJson(url, timeoutMs) {
   const response = await CapacitorHttp.get({
     url: withCacheBust(url),
     headers: {
@@ -128,8 +119,8 @@ async function nativeRequestJson(url) {
       'Cache-Control': 'no-cache',
       Pragma: 'no-cache',
     },
-    connectTimeout: REQUEST_TIMEOUT_MS,
-    readTimeout: REQUEST_TIMEOUT_MS,
+    connectTimeout: timeoutMs,
+    readTimeout: timeoutMs,
     responseType: 'json',
   })
 
@@ -140,9 +131,9 @@ async function nativeRequestJson(url) {
   return parseJsonPayload(response.data)
 }
 
-async function webRequestJson(url) {
+async function webRequestJson(url, timeoutMs) {
   const controller = new AbortController()
-  const timeoutId = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS)
+  const timeoutId = setTimeout(() => controller.abort(), timeoutMs)
 
   try {
     const response = await fetch(withCacheBust(url), {
@@ -164,12 +155,12 @@ async function webRequestJson(url) {
   }
 }
 
-async function fetchJson(url) {
+async function fetchJson(url, timeoutMs) {
   if (isNativeAppRuntime()) {
-    return nativeRequestJson(url)
+    return nativeRequestJson(url, timeoutMs)
   }
 
-  return webRequestJson(url)
+  return webRequestJson(url, timeoutMs)
 }
 
 function pickApkAsset(assets = []) {
@@ -219,45 +210,56 @@ function asReleaseCandidate(payload, source) {
   }
 }
 
-function pickBetterCandidate(currentCandidate, nextCandidate) {
-  if (!currentCandidate) {
-    return nextCandidate
+async function firstSuccessful(sources, toCandidate, timeoutMs) {
+  if (!sources.length) {
+    throw new Error('No update sources available')
   }
 
-  return compareVersions(nextCandidate.versionName, currentCandidate.versionName) > 0
-    ? nextCandidate
-    : currentCandidate
+  const errors = []
+
+  return new Promise((resolve, reject) => {
+    let pending = sources.length
+
+    for (const source of sources) {
+      fetchJson(source, timeoutMs)
+        .then((payload) => toCandidate(payload, source))
+        .then((candidate) => resolve(candidate))
+        .catch((error) => {
+          errors.push(error)
+          pending -= 1
+
+          if (pending === 0) {
+            reject(errors[errors.length - 1] || new Error('Update request failed'))
+          }
+        })
+    }
+  })
 }
 
 export async function fetchLatestReleaseInfo() {
-  let lastError = null
-  let bestCandidate = null
+  const manifestSources = getUpdateManifestSources()
+  const releaseApiSources = getReleaseApiSources()
 
-  for (const source of getUpdateManifestSources()) {
-    try {
-      const payload = await fetchJson(source)
-      bestCandidate = pickBetterCandidate(bestCandidate, asManifestCandidate(payload, source))
-    } catch (error) {
-      lastError = error
-    }
+  const primaryManifestSources = manifestSources.slice(0, 3)
+  const fallbackManifestSources = manifestSources.slice(3)
+  const primaryReleaseSources = releaseApiSources.slice(0, 3)
+  const fallbackReleaseSources = releaseApiSources.slice(3)
+
+  try {
+    return await firstSuccessful(primaryManifestSources, asManifestCandidate, PRIMARY_REQUEST_TIMEOUT_MS)
+  } catch {}
+
+  try {
+    return await firstSuccessful(fallbackManifestSources, asManifestCandidate, FALLBACK_REQUEST_TIMEOUT_MS)
+  } catch {}
+
+  try {
+    return await firstSuccessful(primaryReleaseSources, asReleaseCandidate, PRIMARY_REQUEST_TIMEOUT_MS)
+  } catch {}
+
+  try {
+    return await firstSuccessful(fallbackReleaseSources, asReleaseCandidate, FALLBACK_REQUEST_TIMEOUT_MS)
+  } catch (error) {
+    throw error || new Error('Failed to check updates, please try again later.')
   }
-
-  for (const source of getReleaseApiSources()) {
-    try {
-      const payload = await fetchJson(source)
-      bestCandidate = pickBetterCandidate(bestCandidate, asReleaseCandidate(payload, source))
-    } catch (error) {
-      lastError = error
-    }
-  }
-
-  if (bestCandidate) {
-    return bestCandidate
-  }
-
-  throw lastError || new Error('检查更新失败，请稍后重试')
-}
-
-export function isNativeAppRuntime() {
-  return getRuntimeTarget() === RUNTIME_TARGETS.native
 }
