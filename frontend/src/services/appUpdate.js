@@ -38,7 +38,7 @@ function unique(values) {
   return [...new Set(values.filter(Boolean))]
 }
 
-function withTimeout(promise, timeoutMs = 15000) {
+function withTimeout(timeoutMs = 15000) {
   const controller = new AbortController()
   const timeoutId = setTimeout(() => controller.abort(), timeoutMs)
 
@@ -50,21 +50,45 @@ function withTimeout(promise, timeoutMs = 15000) {
   }
 }
 
+function withCacheBust(url) {
+  const separator = url.includes('?') ? '&' : '?'
+  return `${url}${separator}_=${Date.now()}`
+}
+
+function normalizeVersion(rawVersion = '') {
+  return String(rawVersion).trim().replace(/^v/i, '')
+}
+
+function compareVersions(version1, version2) {
+  const left = normalizeVersion(version1).split('.').map((item) => Number(item || 0))
+  const right = normalizeVersion(version2).split('.').map((item) => Number(item || 0))
+
+  for (let index = 0; index < Math.max(left.length, right.length); index += 1) {
+    const leftValue = left[index] || 0
+    const rightValue = right[index] || 0
+
+    if (leftValue > rightValue) return 1
+    if (leftValue < rightValue) return -1
+  }
+
+  return 0
+}
+
 export function getUpdateManifestSources() {
   const config = getRuntimeConfig()
   const configured = toArray(config.UPDATE_MANIFEST_URLS)
-  const mirrored = DEFAULT_PROXY_PREFIXES.map((prefix) => `${prefix}${RELEASES_LATEST_UPDATE_JSON}`)
   const mirroredStable = DEFAULT_PROXY_PREFIXES.flatMap((prefix) => [
     `${prefix}${REPOSITORY_UPDATE_JSON}`,
     `${prefix}${JSDELIVR_UPDATE_JSON}`,
   ])
+  const mirroredLatest = DEFAULT_PROXY_PREFIXES.map((prefix) => `${prefix}${RELEASES_LATEST_UPDATE_JSON}`)
 
   return unique([
     ...configured,
     JSDELIVR_UPDATE_JSON,
     REPOSITORY_UPDATE_JSON,
     ...mirroredStable,
-    ...mirrored,
+    ...mirroredLatest,
     RELEASES_LATEST_UPDATE_JSON,
   ])
 }
@@ -89,7 +113,6 @@ export function buildDownloadCandidates(downloadUrl = '') {
   const config = getRuntimeConfig()
   const configuredPrefixes = toArray(config.UPDATE_DOWNLOAD_PROXY_PREFIXES)
   const prefixes = unique([...configuredPrefixes, ...DEFAULT_PROXY_PREFIXES])
-
   const mirroredCandidates = prefixes.map((prefix) => `${prefix}${downloadUrl}`)
 
   return unique([
@@ -100,13 +123,15 @@ export function buildDownloadCandidates(downloadUrl = '') {
 }
 
 async function fetchJson(url) {
-  const timeout = withTimeout(null)
+  const timeout = withTimeout()
 
   try {
-    const response = await fetch(url, {
+    const response = await fetch(withCacheBust(url), {
       signal: timeout.signal,
       headers: {
         Accept: 'application/json, application/vnd.github+json',
+        'Cache-Control': 'no-cache',
+        Pragma: 'no-cache',
       },
     })
 
@@ -120,10 +145,6 @@ async function fetchJson(url) {
   }
 }
 
-function normalizeVersion(rawVersion = '') {
-  return String(rawVersion).trim().replace(/^v/i, '')
-}
-
 function pickApkAsset(assets = []) {
   const apkAssets = assets.filter((asset) => /\.apk$/i.test(asset.name || ''))
 
@@ -135,27 +156,60 @@ function pickApkAsset(assets = []) {
   )
 }
 
+function asManifestCandidate(payload, source) {
+  const versionName = normalizeVersion(payload.versionName || payload.tag_name || '')
+  const apkUrl = payload.apkUrl || ''
+
+  if (!versionName || !apkUrl) {
+    throw new Error('Update manifest is missing versionName or apkUrl')
+  }
+
+  return {
+    versionName,
+    versionCode: Number(payload.versionCode || 0),
+    releaseNotes: String(payload.notes || payload.body || '').trim(),
+    fileName: payload.fileName || `boai-music-v${versionName}.apk`,
+    source,
+    downloadCandidates: buildDownloadCandidates(apkUrl),
+  }
+}
+
+function asReleaseCandidate(payload, source) {
+  const versionName = normalizeVersion(payload.tag_name || payload.name || '')
+  const apkAsset = pickApkAsset(payload.assets || [])
+
+  if (!versionName || !apkAsset?.browser_download_url) {
+    throw new Error('Release response is missing apk asset')
+  }
+
+  return {
+    versionName,
+    versionCode: 0,
+    releaseNotes: String(payload.body || '').trim(),
+    fileName: apkAsset.name || `boai-music-v${versionName}.apk`,
+    source,
+    downloadCandidates: buildDownloadCandidates(apkAsset.browser_download_url),
+  }
+}
+
+function pickBetterCandidate(currentCandidate, nextCandidate) {
+  if (!currentCandidate) {
+    return nextCandidate
+  }
+
+  return compareVersions(nextCandidate.versionName, currentCandidate.versionName) > 0
+    ? nextCandidate
+    : currentCandidate
+}
+
 export async function fetchLatestReleaseInfo() {
   let lastError = null
+  let bestCandidate = null
 
   for (const source of getUpdateManifestSources()) {
     try {
       const payload = await fetchJson(source)
-      const versionName = normalizeVersion(payload.versionName || payload.tag_name || '')
-      const apkUrl = payload.apkUrl || ''
-
-      if (!versionName || !apkUrl) {
-        throw new Error('Update manifest is missing versionName or apkUrl')
-      }
-
-      return {
-        versionName,
-        versionCode: Number(payload.versionCode || 0),
-        releaseNotes: String(payload.notes || payload.body || '').trim(),
-        fileName: payload.fileName || `boai-music-v${versionName}.apk`,
-        source,
-        downloadCandidates: buildDownloadCandidates(apkUrl),
-      }
+      bestCandidate = pickBetterCandidate(bestCandidate, asManifestCandidate(payload, source))
     } catch (error) {
       lastError = error
     }
@@ -164,24 +218,14 @@ export async function fetchLatestReleaseInfo() {
   for (const source of getReleaseApiSources()) {
     try {
       const payload = await fetchJson(source)
-      const versionName = normalizeVersion(payload.tag_name || payload.name || '')
-      const apkAsset = pickApkAsset(payload.assets || [])
-
-      if (!versionName || !apkAsset?.browser_download_url) {
-        throw new Error('Release response is missing apk asset')
-      }
-
-      return {
-        versionName,
-        versionCode: 0,
-        releaseNotes: String(payload.body || '').trim(),
-        fileName: apkAsset.name || `boai-music-v${versionName}.apk`,
-        source,
-        downloadCandidates: buildDownloadCandidates(apkAsset.browser_download_url),
-      }
+      bestCandidate = pickBetterCandidate(bestCandidate, asReleaseCandidate(payload, source))
     } catch (error) {
       lastError = error
     }
+  }
+
+  if (bestCandidate) {
+    return bestCandidate
   }
 
   throw lastError || new Error('检查更新失败，请稍后重试')

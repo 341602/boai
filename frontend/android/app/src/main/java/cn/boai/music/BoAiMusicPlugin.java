@@ -21,6 +21,7 @@ import android.provider.Settings;
 import androidx.core.app.NotificationCompat;
 import androidx.core.app.NotificationManagerCompat;
 import androidx.core.content.ContextCompat;
+import androidx.core.content.FileProvider;
 import androidx.core.content.pm.PackageInfoCompat;
 
 import android.support.v4.media.MediaMetadataCompat;
@@ -38,6 +39,7 @@ import com.getcapacitor.annotation.PermissionCallback;
 
 import org.json.JSONArray;
 
+import java.io.File;
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.List;
@@ -391,15 +393,15 @@ public class BoAiMusicPlugin extends Plugin {
                 return;
             }
 
-            Uri apkUri = downloadManager.getUriForDownloadedFile(downloadId);
+            Uri installUri = resolveInstallUri(cursor, downloadId);
 
-            if (apkUri == null) {
+            if (installUri == null) {
                 retryOrFail("无法读取更新包文件");
                 return;
             }
 
             notifyUpdateStatus("downloaded", "");
-            launchApkInstaller(apkUri);
+            launchApkInstaller(installUri);
             notifyUpdateStatus("installing", "");
             resetUpdateState();
         } catch (Exception error) {
@@ -407,6 +409,24 @@ public class BoAiMusicPlugin extends Plugin {
         } finally {
             activeUpdateDownloadId = -1L;
         }
+    }
+
+    private Uri resolveInstallUri(Cursor cursor, long downloadId) {
+        String localUri = cursor.getString(cursor.getColumnIndexOrThrow(DownloadManager.COLUMN_LOCAL_URI));
+
+        if (localUri != null && localUri.startsWith("file://")) {
+            File file = new File(Uri.parse(localUri).getPath());
+
+            if (file.exists()) {
+                return FileProvider.getUriForFile(
+                    getContext(),
+                    getContext().getPackageName() + ".fileprovider",
+                    file
+                );
+            }
+        }
+
+        return downloadManager.getUriForDownloadedFile(downloadId);
     }
 
     private boolean startNextUpdateDownload() {
@@ -432,10 +452,10 @@ public class BoAiMusicPlugin extends Plugin {
                 );
 
                 activeUpdateDownloadId = downloadManager.enqueue(request);
-                notifyUpdateStatus("downloading", "正在尝试更新源");
+                notifyUpdateStatus("downloading", "正在下载更新包");
                 return true;
             } catch (Exception ignored) {
-                // Try the next candidate.
+                // Try next source.
             }
         }
 
@@ -473,9 +493,11 @@ public class BoAiMusicPlugin extends Plugin {
     }
 
     private void launchApkInstaller(Uri apkUri) {
-        Intent installIntent = new Intent(Intent.ACTION_VIEW);
-        installIntent.setDataAndType(apkUri, "application/vnd.android.package-archive");
+        Intent installIntent = new Intent(Intent.ACTION_INSTALL_PACKAGE);
+        installIntent.setData(apkUri);
         installIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_GRANT_READ_URI_PERMISSION);
+        installIntent.putExtra(Intent.EXTRA_NOT_UNKNOWN_SOURCE, true);
+        installIntent.putExtra(Intent.EXTRA_RETURN_RESULT, true);
         getContext().startActivity(installIntent);
     }
 
