@@ -3,6 +3,8 @@ import { getRuntimeTarget, RUNTIME_TARGETS } from './runtime'
 const REPOSITORY = '341602/boai'
 const RELEASES_LATEST_API = `https://api.github.com/repos/${REPOSITORY}/releases/latest`
 const RELEASES_LATEST_UPDATE_JSON = `https://github.com/${REPOSITORY}/releases/latest/download/update.json`
+const REPOSITORY_UPDATE_JSON = `https://raw.githubusercontent.com/${REPOSITORY}/main/app-updates/update.json`
+const JSDELIVR_UPDATE_JSON = `https://cdn.jsdelivr.net/gh/${REPOSITORY}@main/app-updates/update.json`
 
 const DEFAULT_PROXY_PREFIXES = [
   'https://ghproxy.net/',
@@ -52,9 +54,16 @@ export function getUpdateManifestSources() {
   const config = getRuntimeConfig()
   const configured = toArray(config.UPDATE_MANIFEST_URLS)
   const mirrored = DEFAULT_PROXY_PREFIXES.map((prefix) => `${prefix}${RELEASES_LATEST_UPDATE_JSON}`)
+  const mirroredStable = DEFAULT_PROXY_PREFIXES.flatMap((prefix) => [
+    `${prefix}${REPOSITORY_UPDATE_JSON}`,
+    `${prefix}${JSDELIVR_UPDATE_JSON}`,
+  ])
 
   return unique([
     ...configured,
+    JSDELIVR_UPDATE_JSON,
+    REPOSITORY_UPDATE_JSON,
+    ...mirroredStable,
     ...mirrored,
     RELEASES_LATEST_UPDATE_JSON,
   ])

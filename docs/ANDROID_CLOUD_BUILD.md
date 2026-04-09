@@ -87,6 +87,7 @@ git push
 - 打正式 `release APK`
 - 打 `release AAB`
 - 自动生成 `update.json`
+- 自动把 `update.json` 同步到仓库固定地址 `app-updates/update.json`
 - 自动创建或更新 GitHub Release
 
 ### 第 4 步：等构建完成
@@ -96,6 +97,12 @@ git push
 - `boai-music-v1.0.8-release.apk`
 - `boai-music-v1.0.8-release.aab`
 - `update.json`
+
+同时仓库里还会更新：
+
+- `app-updates/update.json`
+
+这个固定地址是 App 检查更新时最优先读取的，比直接访问 GitHub Release API 更稳定。
 
 ## 手机里的 App 是怎么更新的
 
