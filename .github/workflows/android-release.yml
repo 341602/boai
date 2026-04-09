@@ -67,7 +67,9 @@ jobs:
             exit 1
           fi
           KEYSTORE_PATH="$RUNNER_TEMP/boai-release.jks"
-          echo "$ANDROID_KEYSTORE_BASE64" | base64 --decode > "$KEYSTORE_PATH"
+          CLEAN_BASE64="$(printf '%s' "$ANDROID_KEYSTORE_BASE64" | tr -d '\r\n\t ')"
+          CLEAN_BASE64="${CLEAN_BASE64#ANDROID_KEYSTORE_BASE64=}"
+          printf '%s' "$CLEAN_BASE64" | base64 --decode > "$KEYSTORE_PATH"
           echo "ANDROID_KEYSTORE_PATH=$KEYSTORE_PATH" >> "$GITHUB_ENV"
 
       - name: Build release APK and AAB
