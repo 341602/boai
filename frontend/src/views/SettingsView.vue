@@ -41,8 +41,11 @@ const latestReleaseNotes = ref('')
 const latestSourceLabel = ref('')
 const showAboutModal = ref(false)
 const appUpdateMessage = ref('')
+const hasDownloadedUpdate = ref(false)
+const isOpeningInstaller = ref(false)
 
 let updateListenerHandle = null
+let installRetryListenerHandle = null
 
 function normalizeVersion(rawVersion = '') {
   return String(rawVersion).trim().replace(/^v/i, '')
@@ -126,6 +129,7 @@ async function updateApp() {
 
   isStartingUpdate.value = true
   appUpdateMessage.value = ''
+  hasDownloadedUpdate.value = false
 
   try {
     const permission = await invokeNative('ensureInstallPermission', {})
@@ -149,6 +153,24 @@ async function updateApp() {
   }
 }
 
+async function openDownloadedUpdate() {
+  if (!isNativeApp.value || !hasDownloadedUpdate.value) {
+    return
+  }
+
+  isOpeningInstaller.value = true
+
+  try {
+    await invokeNative('openDownloadedUpdate', {})
+    appUpdateMessage.value = '请在系统安装界面确认升级。'
+  } catch (error) {
+    console.error('打开安装界面失败:', error)
+    alert(error?.message || '打开安装界面失败，请稍后重试')
+  } finally {
+    isOpeningInstaller.value = false
+  }
+}
+
 function dismissUpdate() {
   updateAvailable.value = false
   latestVersion.value = ''
@@ -157,6 +179,7 @@ function dismissUpdate() {
   latestReleaseNotes.value = ''
   latestSourceLabel.value = ''
   appUpdateMessage.value = ''
+  hasDownloadedUpdate.value = false
 }
 
 async function setupUpdateStatusListener() {
@@ -194,9 +217,41 @@ async function setupUpdateStatusListener() {
   })
 }
 
+async function setupInstallRetryListener() {
+  if (!isNativeApp.value) {
+    return
+  }
+
+  const bridge = getNativeBridge()
+
+  if (!bridge?.addListener) {
+    return
+  }
+
+  installRetryListenerHandle = await bridge.addListener('appUpdateStatus', async ({ status }) => {
+    if (status === 'downloading') {
+      hasDownloadedUpdate.value = false
+      appUpdateMessage.value = '正在下载更新包，请稍候。'
+      return
+    }
+
+    if (status === 'downloaded') {
+      hasDownloadedUpdate.value = true
+      appUpdateMessage.value = '更新包已下载完成，正在打开安装界面。'
+      await openDownloadedUpdate()
+      return
+    }
+
+    if (status === 'installing') {
+      appUpdateMessage.value = '请在系统安装界面确认升级。'
+    }
+  })
+}
+
 onMounted(async () => {
   await loadNativeAppInfo()
   await setupUpdateStatusListener()
+  await setupInstallRetryListener()
 })
 
 onBeforeUnmount(async () => {
@@ -205,6 +260,12 @@ onBeforeUnmount(async () => {
   }
 
   updateListenerHandle = null
+
+  if (installRetryListenerHandle?.remove) {
+    await installRetryListenerHandle.remove()
+  }
+
+  installRetryListenerHandle = null
 })
 </script>
 
@@ -299,6 +360,14 @@ onBeforeUnmount(async () => {
                 </button>
                 <button class="solid-button" :disabled="isStartingUpdate" @click="updateApp">
                   {{ isStartingUpdate ? '准备中...' : TEXTS.settingsUpdateButtonUpdate }}
+                </button>
+                <button
+                  v-if="hasDownloadedUpdate"
+                  class="solid-button"
+                  :disabled="isOpeningInstaller"
+                  @click="openDownloadedUpdate"
+                >
+                  {{ isOpeningInstaller ? '打开中...' : '立即安装' }}
                 </button>
               </div>
             </div>

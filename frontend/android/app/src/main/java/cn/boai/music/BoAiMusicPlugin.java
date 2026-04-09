@@ -70,6 +70,7 @@ public class BoAiMusicPlugin extends Plugin {
     private final List<String> activeUpdateUrls = new ArrayList<>();
     private int activeUpdateUrlIndex = 0;
     private String activeUpdateFileName = "boai-music-update.apk";
+    private Uri pendingInstallUri = null;
 
     @Override
     public void load() {
@@ -218,6 +219,7 @@ public class BoAiMusicPlugin extends Plugin {
             activeUpdateUrls.addAll(urls);
             activeUpdateUrlIndex = 0;
             activeUpdateFileName = fileName;
+            pendingInstallUri = null;
 
             if (!startNextUpdateDownload()) {
                 call.reject("Failed to start update download");
@@ -230,6 +232,25 @@ public class BoAiMusicPlugin extends Plugin {
             call.resolve(result);
         } catch (Exception error) {
             call.reject("Failed to start update download", error);
+        }
+    }
+
+    @PluginMethod
+    public void openDownloadedUpdate(PluginCall call) {
+        if (pendingInstallUri == null) {
+            call.reject("No downloaded update is ready to install");
+            return;
+        }
+
+        try {
+            launchApkInstaller(pendingInstallUri);
+            notifyUpdateStatus("installing", "");
+
+            JSObject result = new JSObject();
+            result.put("opened", true);
+            call.resolve(result);
+        } catch (Exception error) {
+            call.reject("Failed to open installer", error);
         }
     }
 
@@ -402,9 +423,8 @@ public class BoAiMusicPlugin extends Plugin {
                 return;
             }
 
+            pendingInstallUri = installUri;
             notifyUpdateStatus("downloaded", "");
-            launchApkInstaller(installUri);
-            notifyUpdateStatus("installing", "");
             resetUpdateState();
         } catch (Exception error) {
             retryOrFail(error.getMessage() != null ? error.getMessage() : "更新安装失败");
