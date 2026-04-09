@@ -5,6 +5,7 @@ import android.app.DownloadManager;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
+import android.content.ActivityNotFoundException;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
@@ -12,6 +13,7 @@ import android.content.IntentFilter;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
+import android.content.pm.ResolveInfo;
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.Build;
@@ -493,12 +495,51 @@ public class BoAiMusicPlugin extends Plugin {
     }
 
     private void launchApkInstaller(Uri apkUri) {
-        Intent installIntent = new Intent(Intent.ACTION_INSTALL_PACKAGE);
-        installIntent.setData(apkUri);
-        installIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_GRANT_READ_URI_PERMISSION);
-        installIntent.putExtra(Intent.EXTRA_NOT_UNKNOWN_SOURCE, true);
-        installIntent.putExtra(Intent.EXTRA_RETURN_RESULT, true);
-        getContext().startActivity(installIntent);
+        Intent installIntent = new Intent(Intent.ACTION_VIEW);
+        installIntent.setDataAndType(apkUri, "application/vnd.android.package-archive");
+        installIntent.addFlags(
+            Intent.FLAG_ACTIVITY_NEW_TASK |
+            Intent.FLAG_GRANT_READ_URI_PERMISSION |
+            Intent.FLAG_GRANT_WRITE_URI_PERMISSION
+        );
+
+        PackageManager packageManager = getContext().getPackageManager();
+        List<ResolveInfo> resolvers = packageManager.queryIntentActivities(
+            installIntent,
+            PackageManager.MATCH_DEFAULT_ONLY
+        );
+
+        for (ResolveInfo resolveInfo : resolvers) {
+            getContext().grantUriPermission(
+                resolveInfo.activityInfo.packageName,
+                apkUri,
+                Intent.FLAG_GRANT_READ_URI_PERMISSION | Intent.FLAG_GRANT_WRITE_URI_PERMISSION
+            );
+        }
+
+        try {
+            if (getActivity() != null) {
+                getActivity().runOnUiThread(() -> getActivity().startActivity(installIntent));
+                return;
+            }
+
+            getContext().startActivity(installIntent);
+        } catch (ActivityNotFoundException primaryError) {
+            Intent fallbackIntent = new Intent(Intent.ACTION_INSTALL_PACKAGE);
+            fallbackIntent.setData(apkUri);
+            fallbackIntent.addFlags(
+                Intent.FLAG_ACTIVITY_NEW_TASK |
+                Intent.FLAG_GRANT_READ_URI_PERMISSION |
+                Intent.FLAG_GRANT_WRITE_URI_PERMISSION
+            );
+
+            if (getActivity() != null) {
+                getActivity().runOnUiThread(() -> getActivity().startActivity(fallbackIntent));
+                return;
+            }
+
+            getContext().startActivity(fallbackIntent);
+        }
     }
 
     private void notifyUpdateStatus(String status, String message) {
