@@ -1,137 +1,211 @@
 <script setup>
-import { computed, ref } from 'vue'
-import { Check, Disc3, Download, House, Info, ListMusic, Palette, MoonStar, Settings2, SunMedium, X } from 'lucide-vue-next'
+import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
+import {
+  Check,
+  Disc3,
+  Download,
+  House,
+  Info,
+  ListMusic,
+  MoonStar,
+  Palette,
+  Settings2,
+  SunMedium,
+  X,
+} from 'lucide-vue-next'
 import appPackage from '../../package.json'
 import { THEME_MODES, useThemePreference } from '../composables/useThemePreference'
 import { TEXTS } from '../constants/texts'
+import { fetchLatestReleaseInfo, isNativeAppRuntime } from '../services/appUpdate'
+import { getNativeBridge, invokeNative } from '../services/runtime'
 
-const { resolvedTheme, setThemePreference, themePreference } = useThemePreference()
+const { setThemePreference, themePreference } = useThemePreference()
 
 const themeOptions = [
-  {
-    value: THEME_MODES.system,
-    label: TEXTS.settingsThemeSystem,
-    icon: Palette,
-  },
-  {
-    value: THEME_MODES.light,
-    label: TEXTS.settingsThemeLight,
-    icon: SunMedium,
-  },
-  {
-    value: THEME_MODES.dark,
-    label: TEXTS.settingsThemeDark,
-    icon: MoonStar,
-  },
+  { value: THEME_MODES.system, label: TEXTS.settingsThemeSystem, icon: Palette },
+  { value: THEME_MODES.light, label: TEXTS.settingsThemeLight, icon: SunMedium },
+  { value: THEME_MODES.dark, label: TEXTS.settingsThemeDark, icon: MoonStar },
 ]
 
-const versionLabel = computed(() => `v${appPackage.version || '0.0.0'}`)
-
+const isNativeApp = computed(() => isNativeAppRuntime())
+const versionLabel = ref(`v${appPackage.version || '0.0.0'}`)
+const versionCode = ref(0)
+const isDebugBuild = ref(false)
 const isCheckingUpdate = ref(false)
+const isStartingUpdate = ref(false)
 const updateAvailable = ref(false)
 const latestVersion = ref('')
+const latestDownloadCandidates = ref([])
+const latestDownloadName = ref('')
+const latestReleaseNotes = ref('')
+const latestSourceLabel = ref('')
 const showAboutModal = ref(false)
+const appUpdateMessage = ref('')
+
+let updateListenerHandle = null
+
+function normalizeVersion(rawVersion = '') {
+  return String(rawVersion).trim().replace(/^v/i, '')
+}
+
+function compareVersions(version1, version2) {
+  const left = normalizeVersion(version1).split('.').map((item) => Number(item || 0))
+  const right = normalizeVersion(version2).split('.').map((item) => Number(item || 0))
+
+  for (let index = 0; index < Math.max(left.length, right.length); index += 1) {
+    const leftValue = left[index] || 0
+    const rightValue = right[index] || 0
+
+    if (leftValue > rightValue) return 1
+    if (leftValue < rightValue) return -1
+  }
+
+  return 0
+}
+
+function currentVersion() {
+  return normalizeVersion(versionLabel.value) || normalizeVersion(appPackage.version) || '0.0.0'
+}
+
+async function loadNativeAppInfo() {
+  if (!isNativeApp.value) {
+    return
+  }
+
+  try {
+    const info = await invokeNative('getAppInfo', {})
+    versionLabel.value = `v${info.versionName || appPackage.version || '0.0.0'}`
+    versionCode.value = Number(info.versionCode || 0)
+    isDebugBuild.value = Boolean(info.debuggable)
+  } catch (error) {
+    console.warn('Failed to load native app info:', error)
+  }
+}
 
 async function checkForUpdates() {
   isCheckingUpdate.value = true
-  
-  const mirrors = [
-    { name: 'ghproxy.net', url: 'https://ghproxy.net/https://api.github.com/repos/341602/boai/releases/latest' },
-    { name: 'mirror.ghproxy.com', url: 'https://mirror.ghproxy.com/https://api.github.com/repos/341602/boai/releases/latest' },
-    { name: 'gh-proxy.com', url: 'https://gh-proxy.com/https://api.github.com/repos/341602/boai/releases/latest' },
-    { name: 'moeyy.cn', url: 'https://moeyy.cn/gh-proxy/https://api.github.com/repos/341602/boai/releases/latest' },
-    { name: 'ghp.ci', url: 'https://ghp.ci/https://api.github.com/repos/341602/boai/releases/latest' },
-    { name: 'GitHub 直接', url: 'https://api.github.com/repos/341602/boai/releases/latest' },
-  ]
-  
+  appUpdateMessage.value = ''
+
   try {
-    let response
-    let lastError
-    let usedMirror = ''
-    
-    for (const mirror of mirrors) {
-      try {
-        console.log(`尝试使用 ${mirror.name}...`)
-        const controller = new AbortController()
-        const timeoutId = setTimeout(() => controller.abort(), 15000)
-        
-        response = await fetch(mirror.url, { signal: controller.signal })
-        clearTimeout(timeoutId)
-        
-        console.log(`${mirror.name} 响应状态:`, response.status)
-        
-        if (response.ok) {
-          usedMirror = mirror.name
-          break
-        }
-      } catch (err) {
-        console.log(`${mirror.name} 失败:`, err)
-        lastError = err
-        continue
-      }
-    }
-    
-    if (!response || !response.ok) {
-      if (lastError) throw lastError
-      throw new Error('所有镜像都无法访问')
-    }
-    
-    console.log(`成功使用: ${usedMirror}`)
-    
-    if (response.status === 404) {
-      alert(TEXTS.settingsUpdateNoReleases)
+    const releaseInfo = await fetchLatestReleaseInfo()
+
+    if (compareVersions(releaseInfo.versionName, currentVersion()) <= 0) {
+      updateAvailable.value = false
+      alert(TEXTS.settingsUpdateUpToDate || '当前已经是最新版本')
       return
     }
-    
-    const data = await response.json()
-    console.log('Release 数据:', data)
-    
-    const latestTag = data.tag_name.replace('v', '')
-    const currentVersion = appPackage.version || '0.0.0'
-    
-    console.log('最新版本:', latestTag, '当前版本:', currentVersion)
-    
-    if (compareVersions(latestTag, currentVersion) > 0) {
-      updateAvailable.value = true
-      latestVersion.value = latestTag
-    } else {
-      alert(TEXTS.settingsUpdateUpToDate)
-    }
+
+    latestVersion.value = releaseInfo.versionName
+    latestDownloadCandidates.value = releaseInfo.downloadCandidates || []
+    latestDownloadName.value = releaseInfo.fileName || `boai-music-v${releaseInfo.versionName}.apk`
+    latestReleaseNotes.value = releaseInfo.releaseNotes || ''
+    latestSourceLabel.value = releaseInfo.source || ''
+    updateAvailable.value = true
   } catch (error) {
     console.error('检查更新失败:', error)
-    if (error.name === 'AbortError') {
-      alert('请求超时，请稍后重试')
-    } else {
-      alert(TEXTS.settingsUpdateFailed)
-    }
+    alert(error?.message || TEXTS.settingsUpdateFailed || '检查更新失败，请稍后重试')
   } finally {
     isCheckingUpdate.value = false
   }
 }
 
-function updateApp() {
-  location.reload()
+async function updateApp() {
+  if (!latestDownloadCandidates.value.length) {
+    return
+  }
+
+  if (!isNativeApp.value) {
+    window.open(latestDownloadCandidates.value[0], '_blank', 'noopener')
+    return
+  }
+
+  if (isDebugBuild.value) {
+    alert('当前安装的是调试包，应用内更新仅支持正式 release 包。请先安装正式包后再使用。')
+    return
+  }
+
+  isStartingUpdate.value = true
+  appUpdateMessage.value = ''
+
+  try {
+    const permission = await invokeNative('ensureInstallPermission', {})
+
+    if (!permission?.granted) {
+      alert('请先允许“安装未知应用”权限，然后再次点击“立即更新”。')
+      return
+    }
+
+    await invokeNative('downloadAndInstallUpdate', {
+      urls: latestDownloadCandidates.value,
+      fileName: latestDownloadName.value || `boai-music-v${latestVersion.value}.apk`,
+    })
+
+    appUpdateMessage.value = '更新包开始下载，完成后会自动打开安装界面。'
+  } catch (error) {
+    console.error('启动更新失败:', error)
+    alert(error?.message || '启动更新失败，请稍后重试')
+  } finally {
+    isStartingUpdate.value = false
+  }
 }
 
 function dismissUpdate() {
   updateAvailable.value = false
   latestVersion.value = ''
+  latestDownloadCandidates.value = []
+  latestDownloadName.value = ''
+  latestReleaseNotes.value = ''
+  latestSourceLabel.value = ''
+  appUpdateMessage.value = ''
 }
 
-function compareVersions(version1, version2) {
-  const v1 = version1.split('.').map(Number)
-  const v2 = version2.split('.').map(Number)
-  
-  for (let i = 0; i < Math.max(v1.length, v2.length); i++) {
-    const num1 = v1[i] || 0
-    const num2 = v2[i] || 0
-    
-    if (num1 > num2) return 1
-    if (num1 < num2) return -1
+async function setupUpdateStatusListener() {
+  if (!isNativeApp.value) {
+    return
   }
-  
-  return 0
+
+  const bridge = getNativeBridge()
+
+  if (!bridge?.addListener) {
+    return
+  }
+
+  updateListenerHandle = await bridge.addListener('appUpdateStatus', ({ status, message }) => {
+    if (status === 'downloading') {
+      appUpdateMessage.value = '正在下载更新包，请稍候。'
+      return
+    }
+
+    if (status === 'downloaded') {
+      appUpdateMessage.value = '更新包已下载完成，正在打开安装界面。'
+      return
+    }
+
+    if (status === 'installing') {
+      appUpdateMessage.value = '请在系统安装界面确认升级。'
+      return
+    }
+
+    if (status === 'failed') {
+      const nextMessage = message || '更新失败，请稍后重试。'
+      appUpdateMessage.value = nextMessage
+      alert(nextMessage)
+    }
+  })
 }
+
+onMounted(async () => {
+  await loadNativeAppInfo()
+  await setupUpdateStatusListener()
+})
+
+onBeforeUnmount(async () => {
+  if (updateListenerHandle?.remove) {
+    await updateListenerHandle.remove()
+  }
+
+  updateListenerHandle = null
+})
 </script>
 
 <template>
@@ -144,23 +218,13 @@ function compareVersions(version1, version2) {
         <RouterLink class="nav-pill nav-pill--icon" :to="{ name: 'home' }" :title="TEXTS.navHome" :aria-label="TEXTS.navHome">
           <House class="button-icon" />
         </RouterLink>
-        <RouterLink
-          class="nav-pill nav-pill--icon"
-          :to="{ name: 'playlist' }"
-          :title="TEXTS.navPlaylist"
-          :aria-label="TEXTS.navPlaylist"
-        >
+        <RouterLink class="nav-pill nav-pill--icon" :to="{ name: 'playlist' }" :title="TEXTS.navPlaylist" :aria-label="TEXTS.navPlaylist">
           <ListMusic class="button-icon" />
         </RouterLink>
         <RouterLink class="nav-pill nav-pill--icon" :to="{ name: 'player' }" :title="TEXTS.navPlayer" :aria-label="TEXTS.navPlayer">
           <Disc3 class="button-icon" />
         </RouterLink>
-        <RouterLink
-          class="nav-pill nav-pill--icon"
-          :to="{ name: 'settings' }"
-          :title="TEXTS.navSettings"
-          :aria-label="TEXTS.navSettings"
-        >
+        <RouterLink class="nav-pill nav-pill--icon" :to="{ name: 'settings' }" :title="TEXTS.navSettings" :aria-label="TEXTS.navSettings">
           <Settings2 class="button-icon" />
         </RouterLink>
       </nav>
@@ -212,30 +276,34 @@ function compareVersions(version1, version2) {
               <Disc3 class="button-icon" />
             </div>
             <h3 class="app-name">博爱音乐</h3>
-            <p class="app-version">{{ versionLabel }}</p>
+            <p class="app-version">
+              {{ versionLabel }}
+              <span v-if="versionCode" class="app-version-code">({{ versionCode }})</span>
+            </p>
+            <p v-if="isDebugBuild" class="app-debug-tip">当前安装的是调试包，应用内更新只支持正式 release 包。</p>
           </div>
 
           <div class="app-actions">
-            <button 
-              class="solid-button update-button" 
-              :disabled="isCheckingUpdate"
-              @click="checkForUpdates"
-            >
+            <button class="solid-button update-button" :disabled="isCheckingUpdate" @click="checkForUpdates">
               <Download v-if="!isCheckingUpdate" class="button-icon" />
               <span>{{ isCheckingUpdate ? TEXTS.settingsUpdateChecking : TEXTS.settingsUpdateButton }}</span>
             </button>
 
             <div v-if="updateAvailable" class="update-info">
-              <p><strong>{{ TEXTS.settingsUpdateAvailable }}: v{{ latestVersion }}</strong></p>
+              <p><strong>{{ TEXTS.settingsUpdateAvailable || '发现新版本' }}: v{{ latestVersion }}</strong></p>
+              <p v-if="latestSourceLabel" class="update-meta">更新源：{{ latestSourceLabel }}</p>
+              <p v-if="latestReleaseNotes" class="update-notes">{{ latestReleaseNotes }}</p>
               <div class="update-actions">
                 <button class="plain-button" @click="dismissUpdate">
                   {{ TEXTS.settingsUpdateButtonLater }}
                 </button>
-                <button class="solid-button" @click="updateApp">
-                  {{ TEXTS.settingsUpdateButtonUpdate }}
+                <button class="solid-button" :disabled="isStartingUpdate" @click="updateApp">
+                  {{ isStartingUpdate ? '准备中...' : TEXTS.settingsUpdateButtonUpdate }}
                 </button>
               </div>
             </div>
+
+            <p v-if="appUpdateMessage" class="update-message">{{ appUpdateMessage }}</p>
           </div>
         </div>
       </div>
@@ -254,6 +322,11 @@ function compareVersions(version1, version2) {
   color: var(--text-subtle);
 }
 
+.settings-choice-list {
+  display: grid;
+  gap: 0.75rem;
+}
+
 .settings-choice {
   display: flex;
   align-items: center;
@@ -264,11 +337,15 @@ function compareVersions(version1, version2) {
   border: 1px solid var(--border-subtle);
   color: var(--text-primary);
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: background 0.2s ease, border-color 0.2s ease, transform 0.2s ease;
 }
 
 .settings-choice:hover {
   background: var(--surface-hover);
+}
+
+.settings-choice:active {
+  transform: scale(0.985);
 }
 
 .settings-choice--active {
@@ -292,7 +369,7 @@ function compareVersions(version1, version2) {
 .modal-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.5);
+  background: rgba(10, 18, 38, 0.38);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -301,15 +378,15 @@ function compareVersions(version1, version2) {
 }
 
 .modal {
-  background: color-mix(in srgb, var(--surface) 85%, transparent);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
+  background: color-mix(in srgb, var(--surface-strong) 88%, transparent);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
   border-radius: 1rem;
-  max-width: 400px;
+  max-width: 420px;
   width: 100%;
   max-height: 90vh;
   overflow: hidden;
-  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+  box-shadow: var(--shadow-soft);
 }
 
 .modal-header {
@@ -353,15 +430,26 @@ function compareVersions(version1, version2) {
 }
 
 .app-name {
-  margin: 0 0 0.5rem 0;
+  margin: 0 0 0.5rem;
   font-size: 1.25rem;
-  font-weight: 600;
+  font-weight: 700;
 }
 
-.app-version {
+.app-version,
+.app-debug-tip,
+.update-meta,
+.update-message {
   margin: 0;
   color: var(--text-subtle);
   font-size: 0.875rem;
+}
+
+.app-version-code {
+  opacity: 0.76;
+}
+
+.app-debug-tip {
+  margin-top: 0.75rem;
 }
 
 .app-actions {
@@ -383,13 +471,19 @@ function compareVersions(version1, version2) {
 
 .update-info {
   padding: 1rem;
-  background: var(--accent-soft);
-  border: 1px solid var(--accent);
-  border-radius: 0.75rem;
+  background: color-mix(in srgb, var(--surface-strong) 78%, rgba(var(--accent-rgb), 0.16));
+  border: 1px solid rgba(var(--accent-rgb), 0.28);
+  border-radius: 0.875rem;
 }
 
 .update-info p {
-  margin: 0 0 0.75rem 0;
+  margin: 0 0 0.75rem;
+}
+
+.update-notes {
+  white-space: pre-wrap;
+  line-height: 1.6;
+  color: var(--text-secondary);
 }
 
 .update-actions {

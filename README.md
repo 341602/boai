@@ -68,6 +68,20 @@ Important:
 - the release build workflow is:
   - `.github/workflows/android-release.yml`
 
+## App release and update
+
+For a beginner-friendly release/update flow, read:
+
+- `docs/ANDROID_CLOUD_BUILD.md`
+
+The short version is:
+
+1. bump `frontend/package.json` version
+2. push to GitHub
+3. run `Android Release Build`
+4. install the generated `release APK`
+5. future updates can be checked from the app settings page
+
 ## Files you should know
 
 - frontend runtime switch:

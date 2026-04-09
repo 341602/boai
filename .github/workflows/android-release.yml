@@ -57,12 +57,29 @@ jobs:
         working-directory: frontend
         run: npm run android:prepare
 
-      - name: Build debug APK
+      - name: Decode signing keystore
+        shell: bash
+        env:
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+        run: |
+          if [ -z "$ANDROID_KEYSTORE_BASE64" ]; then
+            echo "ANDROID_KEYSTORE_BASE64 is not configured"
+            exit 1
+          fi
+          KEYSTORE_PATH="$RUNNER_TEMP/boai-release.jks"
+          echo "$ANDROID_KEYSTORE_BASE64" | base64 --decode > "$KEYSTORE_PATH"
+          echo "ANDROID_KEYSTORE_PATH=$KEYSTORE_PATH" >> "$GITHUB_ENV"
+
+      - name: Build release APK and AAB
         working-directory: frontend/android
         shell: bash
+        env:
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
         run: |
           chmod +x gradlew
-          ./gradlew assembleDebug --stacktrace
+          ./gradlew assembleRelease bundleRelease --stacktrace
 
       - name: Get version from package.json
         id: get_version
@@ -71,24 +88,45 @@ jobs:
         run: |
           VERSION=$(node -p "require('./package.json').version")
           echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "tag=v$VERSION" >> $GITHUB_OUTPUT
+          echo "apk_name=boai-music-v$VERSION-release.apk" >> $GITHUB_OUTPUT
+          echo "aab_name=boai-music-v$VERSION-release.aab" >> $GITHUB_OUTPUT
+
+      - name: Prepare release assets
+        shell: bash
+        run: |
+          cp "frontend/android/app/build/outputs/apk/release/app-release.apk" "frontend/android/app/build/outputs/apk/release/${{ steps.get_version.outputs.apk_name }}"
+          cp "frontend/android/app/build/outputs/bundle/release/app-release.aab" "frontend/android/app/build/outputs/bundle/release/${{ steps.get_version.outputs.aab_name }}"
+          cat > frontend/android/app/build/outputs/apk/release/update.json <<EOF
+          {
+            "versionCode": $(node -e "const v=require('./frontend/package.json').version.split('.').map(n=>parseInt(n||'0',10)); while(v.length<3)v.push(0); process.stdout.write(String(v[0]*10000+v[1]*100+v[2]))"),
+            "versionName": "${{ steps.get_version.outputs.version }}",
+            "apkUrl": "https://github.com/${{ github.repository }}/releases/download/${{ steps.get_version.outputs.tag }}/${{ steps.get_version.outputs.apk_name }}"
+          }
+          EOF
 
       - name: Create GitHub Release
-        if: startsWith(github.ref, 'refs/tags/')
         uses: softprops/action-gh-release@v2
         with:
-          files: frontend/android/app/build/outputs/apk/debug/app-debug.apk
+          files: |
+            frontend/android/app/build/outputs/apk/release/${{ steps.get_version.outputs.apk_name }}
+            frontend/android/app/build/outputs/bundle/release/${{ steps.get_version.outputs.aab_name }}
+            frontend/android/app/build/outputs/apk/release/update.json
           name: Release ${{ steps.get_version.outputs.version }}
-          tag_name: ${{ github.ref_name }}
+          tag_name: ${{ startsWith(github.ref, 'refs/tags/') && github.ref_name || steps.get_version.outputs.tag }}
           generate_release_notes: true
           overwrite_files: true
           make_latest: true
+          target_commitish: ${{ github.sha }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Upload debug artifacts
+      - name: Upload release artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: boai-music-debug-build
+          name: boai-music-release-build
           path: |
-            frontend/android/app/build/outputs/apk/debug/app-debug.apk
+            frontend/android/app/build/outputs/apk/release/${{ steps.get_version.outputs.apk_name }}
+            frontend/android/app/build/outputs/bundle/release/${{ steps.get_version.outputs.aab_name }}
+            frontend/android/app/build/outputs/apk/release/update.json
           if-no-files-found: error

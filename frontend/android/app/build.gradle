@@ -1,3 +1,5 @@
+import groovy.json.JsonSlurper
+
 apply plugin: 'com.android.application'
 
 def getSecret = { String name ->
@@ -22,6 +24,17 @@ def releaseKeyAlias = getSecret("ANDROID_KEY_ALIAS")
 def releaseKeyPassword = getSecret("ANDROID_KEY_PASSWORD")
 def hasReleaseSigning = releaseStoreFile && releaseStorePassword && releaseKeyAlias && releaseKeyPassword
 
+def frontendPackage = new JsonSlurper().parse(file("$projectDir/../../package.json"))
+def frontendVersionName = (frontendPackage.version ?: "1.0.0").toString()
+def versionSegments = frontendVersionName.tokenize('.').collect { segment ->
+    def normalized = (segment =~ /\d+/).find() ? ((segment =~ /\d+/)[0] as String) : "0"
+    return normalized.toInteger()
+}
+while (versionSegments.size() < 3) {
+    versionSegments << 0
+}
+def frontendVersionCode = (versionSegments[0] * 10000) + (versionSegments[1] * 100) + versionSegments[2]
+
 android {
     namespace "cn.boai.music"
     compileSdk rootProject.ext.compileSdkVersion
@@ -29,8 +42,8 @@ android {
         applicationId "cn.boai.music"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 1
-        versionName "1.0"
+        versionCode frontendVersionCode
+        versionName frontendVersionName
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         aaptOptions {
              // Files and dirs to omit from the packaged assets dir, modified to accommodate modern web apps.

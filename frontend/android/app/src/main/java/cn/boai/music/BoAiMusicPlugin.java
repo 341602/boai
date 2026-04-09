@@ -1,29 +1,46 @@
 package cn.boai.music;
 
 import android.Manifest;
+import android.app.DownloadManager;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
+import android.content.BroadcastReceiver;
+import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
+import android.content.pm.ApplicationInfo;
+import android.content.pm.PackageInfo;
+import android.content.pm.PackageManager;
+import android.database.Cursor;
+import android.net.Uri;
 import android.os.Build;
+import android.os.Environment;
+import android.provider.Settings;
 
 import androidx.core.app.NotificationCompat;
 import androidx.core.app.NotificationManagerCompat;
+import androidx.core.content.ContextCompat;
+import androidx.core.content.pm.PackageInfoCompat;
 
 import android.support.v4.media.MediaMetadataCompat;
 import android.support.v4.media.session.MediaSessionCompat;
 import android.support.v4.media.session.PlaybackStateCompat;
 
 import com.getcapacitor.JSObject;
+import com.getcapacitor.PermissionState;
 import com.getcapacitor.Plugin;
 import com.getcapacitor.PluginCall;
 import com.getcapacitor.PluginMethod;
-import com.getcapacitor.PermissionState;
 import com.getcapacitor.annotation.CapacitorPlugin;
 import com.getcapacitor.annotation.Permission;
 import com.getcapacitor.annotation.PermissionCallback;
 
+import org.json.JSONArray;
+
 import java.lang.ref.WeakReference;
+import java.util.ArrayList;
+import java.util.List;
 
 @CapacitorPlugin(
     name = "BoAiMusic",
@@ -43,24 +60,35 @@ public class BoAiMusicPlugin extends Plugin {
 
     private NotificationManagerCompat notificationManager;
     private MediaSessionCompat mediaSession;
+    private DownloadManager downloadManager;
+    private BroadcastReceiver updateReceiver;
+    private long activeUpdateDownloadId = -1L;
+    private final List<String> activeUpdateUrls = new ArrayList<>();
+    private int activeUpdateUrlIndex = 0;
+    private String activeUpdateFileName = "boai-music-update.apk";
 
     @Override
     public void load() {
         super.load();
         activeInstance = new WeakReference<>(this);
         notificationManager = NotificationManagerCompat.from(getContext());
+        downloadManager = (DownloadManager) getContext().getSystemService(Context.DOWNLOAD_SERVICE);
         mediaSession = new MediaSessionCompat(getContext(), "BoAiMusic");
         mediaSession.setActive(true);
         createNotificationChannel();
+        registerUpdateReceiver();
     }
 
     @Override
     protected void handleOnDestroy() {
         clearNowPlayingInternal();
+        unregisterUpdateReceiver();
+
         if (mediaSession != null) {
             mediaSession.release();
             mediaSession = null;
         }
+
         activeInstance.clear();
         super.handleOnDestroy();
     }
@@ -100,6 +128,105 @@ public class BoAiMusicPlugin extends Plugin {
     public void clearNowPlaying(PluginCall call) {
         clearNowPlayingInternal();
         call.resolve();
+    }
+
+    @PluginMethod
+    public void getAppInfo(PluginCall call) {
+        JSObject result = new JSObject();
+
+        try {
+            PackageManager packageManager = getContext().getPackageManager();
+            String packageName = getContext().getPackageName();
+            PackageInfo packageInfo = packageManager.getPackageInfo(packageName, 0);
+            int flags = getContext().getApplicationInfo().flags;
+            boolean debuggable = (flags & ApplicationInfo.FLAG_DEBUGGABLE) != 0;
+
+            result.put("packageName", packageName);
+            result.put("versionName", packageInfo.versionName != null ? packageInfo.versionName : "0.0.0");
+            result.put("versionCode", PackageInfoCompat.getLongVersionCode(packageInfo));
+            result.put("debuggable", debuggable);
+            result.put("native", true);
+            call.resolve(result);
+        } catch (Exception error) {
+            call.reject("Failed to read app info", error);
+        }
+    }
+
+    @PluginMethod
+    public void ensureInstallPermission(PluginCall call) {
+        JSObject result = new JSObject();
+
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) {
+            result.put("granted", true);
+            result.put("openedSettings", false);
+            call.resolve(result);
+            return;
+        }
+
+        boolean granted = getContext().getPackageManager().canRequestPackageInstalls();
+        result.put("granted", granted);
+        result.put("openedSettings", false);
+
+        if (granted) {
+            call.resolve(result);
+            return;
+        }
+
+        Intent intent = new Intent(
+            Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES,
+            Uri.parse("package:" + getContext().getPackageName())
+        );
+        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        getContext().startActivity(intent);
+
+        result.put("openedSettings", true);
+        call.resolve(result);
+    }
+
+    @PluginMethod
+    public void downloadAndInstallUpdate(PluginCall call) {
+        List<String> urls = extractUpdateUrls(call);
+        String fileName = sanitizeApkFileName(call.getString("fileName", "boai-music-update.apk"));
+
+        if (urls.isEmpty()) {
+            call.reject("Update url is required");
+            return;
+        }
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O &&
+            !getContext().getPackageManager().canRequestPackageInstalls()) {
+            call.reject("Install permission is required");
+            return;
+        }
+
+        if (downloadManager == null) {
+            call.reject("Download manager unavailable");
+            return;
+        }
+
+        try {
+            if (activeUpdateDownloadId != -1L) {
+                downloadManager.remove(activeUpdateDownloadId);
+                activeUpdateDownloadId = -1L;
+            }
+
+            activeUpdateUrls.clear();
+            activeUpdateUrls.addAll(urls);
+            activeUpdateUrlIndex = 0;
+            activeUpdateFileName = fileName;
+
+            if (!startNextUpdateDownload()) {
+                call.reject("Failed to start update download");
+                return;
+            }
+
+            JSObject result = new JSObject();
+            result.put("enqueued", true);
+            result.put("downloadId", activeUpdateDownloadId);
+            call.resolve(result);
+        } catch (Exception error) {
+            call.reject("Failed to start update download", error);
+        }
     }
 
     @PermissionCallback
@@ -196,7 +323,6 @@ public class BoAiMusicPlugin extends Plugin {
         }
 
         builder.setStyle(mediaStyle);
-
         notificationManager.notify(NOTIFICATION_ID, builder.build());
     }
 
@@ -204,6 +330,176 @@ public class BoAiMusicPlugin extends Plugin {
         if (notificationManager != null) {
             notificationManager.cancel(NOTIFICATION_ID);
         }
+    }
+
+    private void registerUpdateReceiver() {
+        if (updateReceiver != null) {
+            return;
+        }
+
+        updateReceiver = new BroadcastReceiver() {
+            @Override
+            public void onReceive(Context context, Intent intent) {
+                if (intent == null || !DownloadManager.ACTION_DOWNLOAD_COMPLETE.equals(intent.getAction())) {
+                    return;
+                }
+
+                long downloadId = intent.getLongExtra(DownloadManager.EXTRA_DOWNLOAD_ID, -1L);
+                handleUpdateDownloadComplete(downloadId);
+            }
+        };
+
+        ContextCompat.registerReceiver(
+            getContext(),
+            updateReceiver,
+            new IntentFilter(DownloadManager.ACTION_DOWNLOAD_COMPLETE),
+            ContextCompat.RECEIVER_NOT_EXPORTED
+        );
+    }
+
+    private void unregisterUpdateReceiver() {
+        if (updateReceiver == null) {
+            return;
+        }
+
+        try {
+            getContext().unregisterReceiver(updateReceiver);
+        } catch (IllegalArgumentException ignored) {
+            // Receiver was already removed.
+        }
+
+        updateReceiver = null;
+    }
+
+    private void handleUpdateDownloadComplete(long downloadId) {
+        if (downloadId == -1L || downloadId != activeUpdateDownloadId || downloadManager == null) {
+            return;
+        }
+
+        DownloadManager.Query query = new DownloadManager.Query().setFilterById(downloadId);
+
+        try (Cursor cursor = downloadManager.query(query)) {
+            if (cursor == null || !cursor.moveToFirst()) {
+                retryOrFail("未找到更新下载记录");
+                return;
+            }
+
+            int status = cursor.getInt(cursor.getColumnIndexOrThrow(DownloadManager.COLUMN_STATUS));
+
+            if (status != DownloadManager.STATUS_SUCCESSFUL) {
+                retryOrFail("更新包下载失败");
+                return;
+            }
+
+            Uri apkUri = downloadManager.getUriForDownloadedFile(downloadId);
+
+            if (apkUri == null) {
+                retryOrFail("无法读取更新包文件");
+                return;
+            }
+
+            notifyUpdateStatus("downloaded", "");
+            launchApkInstaller(apkUri);
+            notifyUpdateStatus("installing", "");
+            resetUpdateState();
+        } catch (Exception error) {
+            retryOrFail(error.getMessage() != null ? error.getMessage() : "更新安装失败");
+        } finally {
+            activeUpdateDownloadId = -1L;
+        }
+    }
+
+    private boolean startNextUpdateDownload() {
+        if (downloadManager == null) {
+            return false;
+        }
+
+        while (activeUpdateUrlIndex < activeUpdateUrls.size()) {
+            String nextUrl = activeUpdateUrls.get(activeUpdateUrlIndex++);
+
+            try {
+                DownloadManager.Request request = new DownloadManager.Request(Uri.parse(nextUrl));
+                request.setTitle("BoAi Music 更新包");
+                request.setDescription("下载完成后将自动打开安装界面");
+                request.setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED);
+                request.setAllowedOverMetered(true);
+                request.setAllowedOverRoaming(true);
+                request.setMimeType("application/vnd.android.package-archive");
+                request.setDestinationInExternalFilesDir(
+                    getContext(),
+                    Environment.DIRECTORY_DOWNLOADS,
+                    activeUpdateFileName
+                );
+
+                activeUpdateDownloadId = downloadManager.enqueue(request);
+                notifyUpdateStatus("downloading", "正在尝试更新源");
+                return true;
+            } catch (Exception ignored) {
+                // Try the next candidate.
+            }
+        }
+
+        resetUpdateState();
+        return false;
+    }
+
+    private void retryOrFail(String failureMessage) {
+        if (startNextUpdateDownload()) {
+            return;
+        }
+
+        notifyUpdateStatus("failed", failureMessage);
+    }
+
+    private List<String> extractUpdateUrls(PluginCall call) {
+        List<String> urls = new ArrayList<>();
+        JSONArray urlArray = call.getArray("urls");
+
+        if (urlArray != null) {
+            for (int index = 0; index < urlArray.length(); index++) {
+                String value = urlArray.optString(index, "").trim();
+                if (!value.isEmpty()) {
+                    urls.add(value);
+                }
+            }
+        }
+
+        String fallbackUrl = call.getString("url", "").trim();
+        if (!fallbackUrl.isEmpty()) {
+            urls.add(fallbackUrl);
+        }
+
+        return urls;
+    }
+
+    private void launchApkInstaller(Uri apkUri) {
+        Intent installIntent = new Intent(Intent.ACTION_VIEW);
+        installIntent.setDataAndType(apkUri, "application/vnd.android.package-archive");
+        installIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_GRANT_READ_URI_PERMISSION);
+        getContext().startActivity(installIntent);
+    }
+
+    private void notifyUpdateStatus(String status, String message) {
+        JSObject payload = new JSObject();
+        payload.put("status", status);
+        payload.put("message", message == null ? "" : message);
+        notifyListeners("appUpdateStatus", payload, true);
+    }
+
+    private void resetUpdateState() {
+        activeUpdateUrls.clear();
+        activeUpdateUrlIndex = 0;
+        activeUpdateFileName = "boai-music-update.apk";
+    }
+
+    private String sanitizeApkFileName(String fileName) {
+        String safeName = fileName == null ? "boai-music-update.apk" : fileName.trim();
+
+        if (!safeName.endsWith(".apk")) {
+            safeName = safeName + ".apk";
+        }
+
+        return safeName.replaceAll("[^a-zA-Z0-9._-]", "-");
     }
 
     private PendingIntent buildContentIntent() {
