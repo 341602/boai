@@ -1,3 +1,4 @@
+import { CapacitorHttp } from '@capacitor/core'
 import { getRuntimeTarget, RUNTIME_TARGETS } from './runtime'
 
 const REPOSITORY = '341602/boai'
@@ -5,6 +6,7 @@ const RELEASES_LATEST_API = `https://api.github.com/repos/${REPOSITORY}/releases
 const RELEASES_LATEST_UPDATE_JSON = `https://github.com/${REPOSITORY}/releases/latest/download/update.json`
 const REPOSITORY_UPDATE_JSON = `https://raw.githubusercontent.com/${REPOSITORY}/main/app-updates/update.json`
 const JSDELIVR_UPDATE_JSON = `https://cdn.jsdelivr.net/gh/${REPOSITORY}@main/app-updates/update.json`
+const REQUEST_TIMEOUT_MS = 15000
 
 const DEFAULT_PROXY_PREFIXES = [
   'https://ghproxy.net/',
@@ -36,18 +38,6 @@ function toArray(value) {
 
 function unique(values) {
   return [...new Set(values.filter(Boolean))]
-}
-
-function withTimeout(timeoutMs = 15000) {
-  const controller = new AbortController()
-  const timeoutId = setTimeout(() => controller.abort(), timeoutMs)
-
-  return {
-    signal: controller.signal,
-    cleanup() {
-      clearTimeout(timeoutId)
-    },
-  }
 }
 
 function withCacheBust(url) {
@@ -122,12 +112,41 @@ export function buildDownloadCandidates(downloadUrl = '') {
   ])
 }
 
-async function fetchJson(url) {
-  const timeout = withTimeout()
+function parseJsonPayload(data) {
+  if (typeof data === 'string') {
+    return JSON.parse(data)
+  }
+
+  return data
+}
+
+async function nativeRequestJson(url) {
+  const response = await CapacitorHttp.get({
+    url: withCacheBust(url),
+    headers: {
+      Accept: 'application/json, application/vnd.github+json',
+      'Cache-Control': 'no-cache',
+      Pragma: 'no-cache',
+    },
+    connectTimeout: REQUEST_TIMEOUT_MS,
+    readTimeout: REQUEST_TIMEOUT_MS,
+    responseType: 'json',
+  })
+
+  if (response.status < 200 || response.status >= 300) {
+    throw new Error(`Request failed: ${response.status}`)
+  }
+
+  return parseJsonPayload(response.data)
+}
+
+async function webRequestJson(url) {
+  const controller = new AbortController()
+  const timeoutId = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS)
 
   try {
     const response = await fetch(withCacheBust(url), {
-      signal: timeout.signal,
+      signal: controller.signal,
       headers: {
         Accept: 'application/json, application/vnd.github+json',
         'Cache-Control': 'no-cache',
@@ -141,8 +160,16 @@ async function fetchJson(url) {
 
     return await response.json()
   } finally {
-    timeout.cleanup()
+    clearTimeout(timeoutId)
   }
+}
+
+async function fetchJson(url) {
+  if (isNativeAppRuntime()) {
+    return nativeRequestJson(url)
+  }
+
+  return webRequestJson(url)
 }
 
 function pickApkAsset(assets = []) {
