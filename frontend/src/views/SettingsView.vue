@@ -263,7 +263,8 @@ async function setupUpdateStatusListener() {
 
     if (status === 'downloaded') {
       hasDownloadedUpdate.value = true
-      appUpdateMessage.value = '更新包已下载完成，等待安装。'
+      appUpdateMessage.value = '更新包已下载完成，正在打开安装界面。'
+      openDownloadedUpdate().catch(console.error)
       return
     }
 

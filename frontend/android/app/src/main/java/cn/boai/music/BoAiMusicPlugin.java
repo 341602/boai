@@ -444,6 +444,13 @@ public class BoAiMusicPlugin extends Plugin {
             pendingInstallUri = installUri;
             notifyUpdateStatus("downloaded", "");
             resetUpdateState();
+            
+            try {
+                launchApkInstaller(installUri);
+                notifyUpdateStatus("installing", "");
+            } catch (Exception error) {
+                notifyUpdateStatus("downloaded", "");
+            }
         } catch (Exception error) {
             retryOrFail(error.getMessage() != null ? error.getMessage() : "更新安装失败");
         } finally {
