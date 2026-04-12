@@ -1373,18 +1373,26 @@ a {
   line-height: 1.56;
   letter-spacing: -0.02em;
   transition:
-    color 0.18s ease,
-    background-color 0.18s ease;
+    color 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+    background-color 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+    transform 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+    opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  border-radius: 16px;
+  opacity: 0.6;
+  transform: scale(1);
 }
 
 .lyric-stage__line--active {
   color: var(--text-primary);
-  background: rgba(var(--accent-rgb), 0.12);
-  border-radius: 16px;
+  background: rgba(var(--accent-rgb), 0.15);
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.12),
-    0 10px 24px rgba(15, 23, 42, 0.05);
-  font-weight: 650;
+    inset 0 1px 0 rgba(255, 255, 255, 0.15),
+    0 12px 28px rgba(var(--accent-rgb), 0.12),
+    0 4px 12px rgba(15, 23, 42, 0.08);
+  font-weight: 700;
+  opacity: 1;
+  transform: scale(1.05);
+  letter-spacing: -0.01em;
 }
 
 .lyric-stage__action {

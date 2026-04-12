@@ -1,5 +1,5 @@
 <script setup>
-import { nextTick, ref, watch } from 'vue'
+import { nextTick, ref, watch, onMounted, onBeforeUnmount } from 'vue'
 import { Play } from 'lucide-vue-next'
 import { TEXTS } from '../constants/texts'
 
@@ -30,6 +30,13 @@ const pressTimer = ref(null)
 const pressedIndex = ref(-1)
 const pointerStart = ref({ x: 0, y: 0 })
 const longPressTriggered = ref(false)
+const containerRef = ref(null)
+const currentScrollTop = ref(0)
+const targetScrollTop = ref(0)
+const animationFrameId = ref(null)
+const isAnimating = ref(false)
+
+const SCROLL_DURATION = 300 // 滚动动画持续时间（毫秒）
 
 function setLineRef(element, index) {
   if (element) {
@@ -100,6 +107,53 @@ function seekLine(line) {
   clearSelectedLine()
 }
 
+// 使用 requestAnimationFrame 实现平滑滚动动画
+function animateScroll(startTime) {
+  if (!containerRef.value) return
+  
+  const elapsed = Date.now() - startTime
+  const progress = Math.min(elapsed / SCROLL_DURATION, 1)
+  
+  // 使用 ease-out 缓动函数
+  const easeProgress = 1 - Math.pow(1 - progress, 3)
+  
+  currentScrollTop.value = targetScrollTop.value * easeProgress
+  containerRef.value.scrollTop = currentScrollTop.value
+  
+  if (progress < 1) {
+    animationFrameId.value = requestAnimationFrame(() => animateScroll(startTime))
+  } else {
+    isAnimating.value = false
+    animationFrameId.value = null
+  }
+}
+
+function scrollToActiveLine(index) {
+  if (!containerRef.value || !lineRefs.value[index]) return
+  
+  const container = containerRef.value
+  const activeLine = lineRefs.value[index]
+  const containerHeight = container.clientHeight
+  const lineTop = activeLine.offsetTop
+  const lineHeight = activeLine.clientHeight
+  
+  // 计算目标滚动位置（使当前歌词居中）
+  targetScrollTop.value = lineTop - (containerHeight / 2) + (lineHeight / 2)
+  
+  // 如果已经在目标位置附近，不触发动画
+  if (Math.abs(container.scrollTop - targetScrollTop.value) < 5) {
+    return
+  }
+  
+  // 取消之前的动画
+  if (animationFrameId.value) {
+    cancelAnimationFrame(animationFrameId.value)
+  }
+  
+  isAnimating.value = true
+  animateScroll(Date.now())
+}
+
 watch(
   () => props.lines,
   () => {
@@ -112,13 +166,18 @@ watch(
 watch(
   () => props.activeIndex,
   async (index) => {
+    if (index < 0 || index >= props.lines.length) return
+    
     await nextTick()
-    lineRefs.value[index]?.scrollIntoView({
-      behavior: 'smooth',
-      block: 'center',
-    })
+    scrollToActiveLine(index)
   },
 )
+
+onBeforeUnmount(() => {
+  if (animationFrameId.value) {
+    cancelAnimationFrame(animationFrameId.value)
+  }
+})
 </script>
 
 <template>
@@ -128,6 +187,7 @@ watch(
 
   <div
     v-else
+    ref="containerRef"
     class="lyric-stage"
     :class="{ 'lyric-stage--interactive': interactive }"
     @scroll.passive="clearSelectedLine"
