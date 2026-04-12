@@ -7,7 +7,7 @@ export function useScreenOrientation() {
 
   function checkSupport() {
     if (typeof window === 'undefined') return false
-    isSupported.value = 'orientation' in screen
+    isSupported.value = 'orientation' in screen && screen.orientation && typeof screen.orientation.lock === 'function'
     return isSupported.value
   }
 
@@ -49,11 +49,25 @@ export function useScreenOrientation() {
   }
 
   async function lockPortrait() {
-    return lock('portrait')
+    let result = await lock('portrait-primary')
+    if (!result) {
+      result = await lock('portrait')
+    }
+    if (!result) {
+      result = await lock('any')
+    }
+    return result
   }
 
   async function lockLandscape() {
-    return lock('landscape')
+    let result = await lock('landscape')
+    if (!result) {
+      result = await lock('landscape-primary')
+    }
+    if (!result) {
+      result = await lock('any')
+    }
+    return result
   }
 
   function handleOrientationChange() {
