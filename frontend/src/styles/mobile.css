@@ -1677,6 +1677,13 @@ body.immersive-controls-shown .app-root--mobile.app-root--immersive .global-play
   margin-top: 0;
 }
 
+.app-root--mobile .global-player__range {
+  height: 28px;
+  touch-action: none;
+  -webkit-appearance: none;
+  appearance: none;
+}
+
 .app-root--mobile .global-player__cover {
   width: 46px;
   height: 46px;
