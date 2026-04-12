@@ -1,7 +1,9 @@
 <script setup>
-import { nextTick, ref, watch, onMounted, onBeforeUnmount } from 'vue'
-import { Play } from 'lucide-vue-next'
+import { ref, watch, computed, onMounted, onBeforeUnmount } from 'vue'
+import { Play, Minus, Plus, RotateCcw, MoreHorizontal } from 'lucide-vue-next'
 import { TEXTS } from '../constants/texts'
+import { useLyricsScroll } from '../composables/useLyricsScroll'
+import { useLyricsSettings } from '../composables/useLocalStorage'
 
 const props = defineProps({
   lines: {
@@ -20,29 +22,74 @@ const props = defineProps({
     type: Boolean,
     default: false,
   },
+  showFontControls: {
+    type: Boolean,
+    default: false,
+  },
 })
 
 const emit = defineEmits(['seek-line'])
 
-const lineRefs = ref([])
+const { containerRef, lineRefs, setLineRef, scrollToActiveLine, reset } = useLyricsScroll()
+const { settings, increaseFontSize, decreaseFontSize, resetFontSize, getFontSizeStyle } = useLyricsSettings()
+
+const fontControlsExpanded = ref(false)
+let autoHideTimer = null
+
+function toggleFontControls() {
+  fontControlsExpanded.value = !fontControlsExpanded.value
+  if (fontControlsExpanded.value) {
+    resetAutoHideTimer()
+  } else {
+    clearAutoHideTimer()
+  }
+}
+
+function resetAutoHideTimer() {
+  clearAutoHideTimer()
+  autoHideTimer = setTimeout(() => {
+    fontControlsExpanded.value = false
+  }, 3000)
+}
+
+function clearAutoHideTimer() {
+  if (autoHideTimer) {
+    clearTimeout(autoHideTimer)
+    autoHideTimer = null
+  }
+}
+
+function handleContainerClick(event) {
+  if (fontControlsExpanded.value) {
+    fontControlsExpanded.value = false
+    clearAutoHideTimer()
+  }
+}
+
+function onDecreaseFontSize() {
+  decreaseFontSize()
+  resetAutoHideTimer()
+}
+
+function onResetFontSize() {
+  resetFontSize()
+  resetAutoHideTimer()
+}
+
+function onIncreaseFontSize() {
+  increaseFontSize()
+  resetAutoHideTimer()
+}
+
+onBeforeUnmount(() => {
+  clearAutoHideTimer()
+})
+
 const selectedIndex = ref(-1)
 const pressTimer = ref(null)
 const pressedIndex = ref(-1)
 const pointerStart = ref({ x: 0, y: 0 })
 const longPressTriggered = ref(false)
-const containerRef = ref(null)
-const currentScrollTop = ref(0)
-const targetScrollTop = ref(0)
-const animationFrameId = ref(null)
-const isAnimating = ref(false)
-
-const SCROLL_DURATION = 300 // 滚动动画持续时间（毫秒）
-
-function setLineRef(element, index) {
-  if (element) {
-    lineRefs.value[index] = element
-  }
-}
 
 function clearPressTimer() {
   if (pressTimer.value) {
@@ -107,57 +154,10 @@ function seekLine(line) {
   clearSelectedLine()
 }
 
-// 使用 requestAnimationFrame 实现平滑滚动动画
-function animateScroll(startTime) {
-  if (!containerRef.value) return
-  
-  const elapsed = Date.now() - startTime
-  const progress = Math.min(elapsed / SCROLL_DURATION, 1)
-  
-  // 使用 ease-out 缓动函数
-  const easeProgress = 1 - Math.pow(1 - progress, 3)
-  
-  currentScrollTop.value = targetScrollTop.value * easeProgress
-  containerRef.value.scrollTop = currentScrollTop.value
-  
-  if (progress < 1) {
-    animationFrameId.value = requestAnimationFrame(() => animateScroll(startTime))
-  } else {
-    isAnimating.value = false
-    animationFrameId.value = null
-  }
-}
-
-function scrollToActiveLine(index) {
-  if (!containerRef.value || !lineRefs.value[index]) return
-  
-  const container = containerRef.value
-  const activeLine = lineRefs.value[index]
-  const containerHeight = container.clientHeight
-  const lineTop = activeLine.offsetTop
-  const lineHeight = activeLine.clientHeight
-  
-  // 计算目标滚动位置（使当前歌词居中）
-  targetScrollTop.value = lineTop - (containerHeight / 2) + (lineHeight / 2)
-  
-  // 如果已经在目标位置附近，不触发动画
-  if (Math.abs(container.scrollTop - targetScrollTop.value) < 5) {
-    return
-  }
-  
-  // 取消之前的动画
-  if (animationFrameId.value) {
-    cancelAnimationFrame(animationFrameId.value)
-  }
-  
-  isAnimating.value = true
-  animateScroll(Date.now())
-}
-
 watch(
   () => props.lines,
   () => {
-    lineRefs.value = []
+    reset()
     clearSelectedLine()
     clearPressedState()
   },
@@ -167,17 +167,10 @@ watch(
   () => props.activeIndex,
   async (index) => {
     if (index < 0 || index >= props.lines.length) return
-    
-    await nextTick()
-    scrollToActiveLine(index)
+
+    await scrollToActiveLine(index)
   },
 )
-
-onBeforeUnmount(() => {
-  if (animationFrameId.value) {
-    cancelAnimationFrame(animationFrameId.value)
-  }
-})
 </script>
 
 <template>
@@ -191,7 +184,50 @@ onBeforeUnmount(() => {
     class="lyric-stage"
     :class="{ 'lyric-stage--interactive': interactive }"
     @scroll.passive="clearSelectedLine"
+    @click="handleContainerClick"
   >
+    <div v-if="showFontControls" class="lyric-stage__font-controls">
+      <button
+        v-if="!fontControlsExpanded"
+        class="icon-button lyric-stage__font-button"
+        type="button"
+        title="字体设置"
+        aria-label="字体设置"
+        @click.stop="toggleFontControls"
+      >
+        <MoreHorizontal class="button-icon" />
+      </button>
+      <template v-else>
+        <button
+          class="icon-button lyric-stage__font-button"
+          type="button"
+          title="减小字体"
+          aria-label="减小字体"
+          @click.stop="onDecreaseFontSize"
+        >
+          <Minus class="button-icon" />
+        </button>
+        <button
+          class="icon-button lyric-stage__font-button"
+          type="button"
+          title="重置字体"
+          aria-label="重置字体"
+          @click.stop="onResetFontSize"
+        >
+          <RotateCcw class="button-icon" />
+        </button>
+        <button
+          class="icon-button lyric-stage__font-button"
+          type="button"
+          title="增大字体"
+          aria-label="增大字体"
+          @click.stop="onIncreaseFontSize"
+        >
+          <Plus class="button-icon" />
+        </button>
+      </template>
+    </div>
+
     <div
       v-for="(line, index) in lines"
       :key="line.id"
@@ -207,6 +243,7 @@ onBeforeUnmount(() => {
       <p
         class="lyric-stage__line"
         :class="{ 'lyric-stage__line--active': index === activeIndex }"
+        :style="getFontSizeStyle()"
       >
         {{ line.text }}
       </p>

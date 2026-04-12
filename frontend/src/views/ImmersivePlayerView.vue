@@ -7,9 +7,13 @@ import PlaylistPickerModal from '../components/PlaylistPickerModal.vue'
 import { TEXTS } from '../constants/texts'
 import { usePlayerStore } from '../stores/player'
 import { formatArtists, getTrackInitial } from '../utils/track'
+import { useScreenOrientation } from '../composables/useScreenOrientation'
+import { useFullscreen } from '../composables/useFullscreen'
 
 const router = useRouter()
 const player = usePlayerStore()
+const { isSupported: screenOrientationSupported, lockLandscape, lockPortrait } = useScreenOrientation()
+const { isSupported: fullscreenSupported, isFullscreen, enter, exit, toggle } = useFullscreen()
 
 const showImmersiveControls = ref(false)
 let hideControlsTimer = null
@@ -104,16 +108,6 @@ const currentQueueTitle = computed(() => {
 
 const overlayOpen = computed(() => queueOpen.value || playbackModeOpen.value)
 
-function previewLineClass(index) {
-  const distance = Math.abs(index - mobilePreview.value.activeIndex)
-
-  return {
-    'player-screen__lyric-preview-line--active': distance === 0,
-    'player-screen__lyric-preview-line--near': distance === 1,
-    'player-screen__lyric-preview-line--far': distance >= 2,
-  }
-}
-
 function toggleImmersiveControls() {
   showImmersiveControls.value = !showImmersiveControls.value
   resetHideTimer()
@@ -137,19 +131,13 @@ function resetHideTimer() {
   }
 }
 
-function exitImmersiveMode() {
+async function exitImmersiveMode() {
   try {
-    if (screen.orientation && screen.orientation.unlock) {
-      screen.orientation.unlock()
-    }
+    lockPortrait()
   } catch (e) {}
   
   try {
-    if (document.exitFullscreen) {
-      document.exitFullscreen()
-    } else if (document.webkitExitFullscreen) {
-      document.webkitExitFullscreen()
-    }
+    await exit()
   } catch (e) {}
   
   router.back()
@@ -254,17 +242,11 @@ watch(overlayOpen, (open) => {
 
 onMounted(async () => {
   try {
-    if (screen.orientation && screen.orientation.lock) {
-      await screen.orientation.lock('landscape')
-    }
+    await lockLandscape()
   } catch (e) {}
   
   try {
-    if (document.documentElement.requestFullscreen) {
-      await document.documentElement.requestFullscreen()
-    } else if (document.documentElement.webkitRequestFullscreen) {
-      await document.documentElement.webkitRequestFullscreen()
-    }
+    await enter()
   } catch (e) {}
   
   document.body.style.overflow = 'hidden'
@@ -644,27 +626,6 @@ onBeforeUnmount(() => {
   padding: 20px 40px;
   position: relative;
   z-index: 11;
-}
-
-.immersive-player__meta {
-  text-align: center;
-}
-
-.immersive-player__meta h1 {
-  font-size: clamp(1.8rem, 4vw, 2.8rem);
-  line-height: 1.2;
-  margin-bottom: 8px;
-  color: #ffffff;
-  text-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
-  letter-spacing: -0.02em;
-  font-weight: 700;
-}
-
-.immersive-player__meta p {
-  font-size: clamp(1rem, 2vw, 1.3rem);
-  color: rgba(255, 255, 255, 0.7);
-  text-shadow: 0 2px 12px rgba(0, 0, 0, 0.4);
-  font-weight: 500;
 }
 
 .immersive-player__lyric-preview {

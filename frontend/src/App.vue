@@ -1,62 +1,28 @@
 <script setup>
-import { computed, watch, onMounted, onUnmounted } from 'vue'
+import { computed, watch } from 'vue'
 import { RouterView, useRoute } from 'vue-router'
 import GlobalPlayerBar from './components/GlobalPlayerBar.vue'
 import { useViewportMode } from './composables/useViewportMode'
+import { useScreenOrientation } from './composables/useScreenOrientation'
 import { TEXTS } from './constants/texts'
 
 const route = useRoute()
 const { isDesktop } = useViewportMode()
+const { isSupported, lockLandscape, lockPortrait } = useScreenOrientation()
+
 const rootModeClass = computed(() => (isDesktop.value ? 'app-root--desktop' : 'app-root--mobile'))
 const showBrand = computed(() => !(route.name === 'player' && !isDesktop.value) && !(route.name === 'immersive' && !isDesktop.value))
 const showWithBar = computed(() => !(route.name === 'player' && !isDesktop.value) && !(route.name === 'immersive' && !isDesktop.value))
 
-const lockOrientation = async (orientation) => {
-  if (isDesktop.value) return
-  
-  try {
-    if (screen.orientation && screen.orientation.lock) {
-      await screen.orientation.lock(orientation)
-    }
-  } catch (error) {
-    console.log('Screen orientation lock not supported:', error)
-  }
-}
-
-const unlockOrientation = () => {
-  if (isDesktop.value) return
-  
-  try {
-    if (screen.orientation && screen.orientation.unlock) {
-      screen.orientation.unlock()
-    }
-  } catch (error) {
-    console.log('Screen orientation unlock not supported:', error)
-  }
-}
-
-const updateOrientation = () => {
+watch(() => route.name, () => {
   if (isDesktop.value) return
   
   if (route.name === 'immersive') {
-    lockOrientation('landscape')
+    lockLandscape()
   } else {
-    lockOrientation('portrait')
+    lockPortrait()
   }
-}
-
-const stopOrientationWatch = watch(() => route.name, () => {
-  updateOrientation()
 }, { immediate: true })
-
-onMounted(() => {
-  updateOrientation()
-})
-
-onUnmounted(() => {
-  stopOrientationWatch()
-  unlockOrientation()
-})
 </script>
 
 <template>

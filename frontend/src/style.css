@@ -1351,6 +1351,40 @@ a {
   scroll-padding-top: clamp(96px, 14vh, 172px);
   scroll-padding-bottom: clamp(96px, 14vh, 172px);
   scroll-behavior: smooth;
+  position: relative;
+}
+
+.lyric-stage__font-controls {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 12px;
+  padding: 16px 0 12px;
+}
+
+.lyric-stage__font-button {
+  width: 40px;
+  height: 40px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.lyric-stage__font-button:hover {
+  transform: scale(1.05);
+  background: var(--surface-strong);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+}
+
+.lyric-stage__font-button:active {
+  transform: scale(0.95);
 }
 
 .lyric-stage__row {

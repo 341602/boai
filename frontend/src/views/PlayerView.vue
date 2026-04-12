@@ -653,6 +653,7 @@ onBeforeUnmount(() => {
             :lines="lyricLines"
             :active-index="activeLyricIndex"
             :interactive="true"
+            :show-font-controls="true"
             @seek-line="seekLyricLine"
           />
         </div>
