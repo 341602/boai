@@ -1,6 +1,6 @@
 <script setup>
 import { computed, onBeforeUnmount, ref, watch } from 'vue'
-import { ArrowDownToLine, ArrowDownUp, ArrowLeft, Check, Heart, House, ListMusic, ListPlus, Pause, Play, Repeat1, Settings2, Shuffle, SkipBack, SkipForward, Trash2, X } from 'lucide-vue-next'
+import { ArrowDownToLine, ArrowDownUp, ArrowLeft, Check, Heart, House, ListMusic, ListPlus, Maximize2, Pause, Play, Repeat1, Settings2, Shuffle, SkipBack, SkipForward, Trash2, X } from 'lucide-vue-next'
 import { useRouter } from 'vue-router'
 import LyricDisplay from '../components/LyricDisplay.vue'
 import MarqueeText from '../components/MarqueeText.vue'
@@ -15,6 +15,50 @@ import { formatTime } from '../utils/lyrics'
 const router = useRouter()
 const player = usePlayerStore()
 const { isDesktop } = useViewportMode()
+
+// 屏幕方向检测
+const isLandscape = ref(window.innerWidth > window.innerHeight)
+
+function handleResize() {
+  isLandscape.value = window.innerWidth > window.innerHeight
+}
+
+// 切换沉浸模式 - 跳转到独立沉浸页面
+async function toggleImmersiveMode() {
+  try {
+    // 进入横屏和全屏 - 分别处理，即使一个失败另一个也能继续
+    try {
+      if (screen.orientation && screen.orientation.lock) {
+        await screen.orientation.lock('landscape')
+      }
+    } catch (e) {
+      // 屏幕方向锁定失败不影响继续
+    }
+    
+    try {
+      if (document.documentElement.requestFullscreen) {
+        await document.documentElement.requestFullscreen()
+      } else if (document.documentElement.webkitRequestFullscreen) {
+        await document.documentElement.webkitRequestFullscreen()
+      }
+    } catch (e) {
+      // 全屏失败不影响继续
+    }
+    
+    // 跳转到沉浸模式页面
+    router.push({ name: 'immersive' })
+  } catch (error) {
+    // 静默处理错误
+  }
+}
+
+// 监听屏幕方向变化
+window.addEventListener('resize', handleResize)
+onBeforeUnmount(() => {
+  window.removeEventListener('resize', handleResize)
+  document.body.style.overflow = ''
+  document.body.classList.remove('body--lyrics-open')
+})
 
 const { activeLyricIndex, currentQueue, currentQueueSource, currentSong, isCurrentFavorite, isPlaying, lyricLines, playbackMode, playlists } = player
 
@@ -336,6 +380,17 @@ onBeforeUnmount(() => {
           >
             <ListPlus class="button-icon" />
           </button>
+          <!-- 沉浸播放按钮 - 仅移动端显示 -->
+          <button
+            v-if="!isDesktop && currentSong"
+            class="icon-button"
+            type="button"
+            title="沉浸播放"
+            aria-label="沉浸播放"
+            @click="toggleImmersiveMode"
+          >
+            <Maximize2 class="button-icon" />
+          </button>
         </div>
       </header>
 
@@ -378,7 +433,7 @@ onBeforeUnmount(() => {
         </div>
 
         <!-- Mobile Vinyl Layout -->
-        <div v-else class="player-screen__side player-screen__side--vinyl">
+        <div v-else-if="!isLandscape && currentSong" class="player-screen__side player-screen__side--vinyl">
           <div class="player-screen__vinyl-stage">
             <div class="player-screen__tonearm" :class="{ 'player-screen__tonearm--playing': isPlaying }">
               <div class="player-screen__tonearm__arm" />

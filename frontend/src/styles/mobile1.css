@@ -53,28 +53,6 @@ body.body--lyrics-open .app-root--mobile .global-player {
   transition: opacity 0.3s ease, transform 0.3s ease;
 }
 
-/* 沉浸式页面默认隐藏底部播放栏 */
-body .app-root--mobile.app-root--immersive .global-player {
-  opacity: 0;
-  transform: translateY(100%);
-  pointer-events: none;
-  transition: opacity 0.3s ease, transform 0.3s ease;
-}
-
-/* 沉浸式页面显示控件时显示底部播放栏 */
-body.immersive-controls-shown .app-root--mobile.app-root--immersive .global-player {
-  opacity: 1;
-  transform: translateY(0);
-  pointer-events: auto;
-  z-index: 1001;
-  position: fixed;
-  left: 50%;
-  right: auto;
-  bottom: 12px;
-  width: min(920px, calc(100% - 24px));
-  transform: translateX(-50%);
-}
-
 .app-root--mobile .page-shell {
   width: 100%;
   padding: calc(34px + env(safe-area-inset-top, 0px)) 12px 0;

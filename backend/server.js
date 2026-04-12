@@ -117,6 +117,7 @@ app.use((_req, res) => {
   });
 });
 
-app.listen(port, () => {
+app.listen(port, '0.0.0.0', () => {
   console.log(`BoAi local service running at http://localhost:${port}`);
+  console.log(`Also available at http://0.0.0.0:${port}`);
 });

@@ -2,6 +2,7 @@ import { ref } from 'vue'
 import { createRouter, createWebHistory } from 'vue-router'
 import HomeView from '../views/HomeView.vue'
 import PlayerView from '../views/PlayerView.vue'
+import ImmersivePlayerView from '../views/ImmersivePlayerView.vue'
 import PlaylistView from '../views/PlaylistView.vue'
 import SettingsView from '../views/SettingsView.vue'
 
@@ -21,6 +22,11 @@ const router = createRouter({
       component: PlayerView,
     },
     {
+      path: '/immersive',
+      name: 'immersive',
+      component: ImmersivePlayerView,
+    },
+    {
       path: '/playlist',
       name: 'playlist',
       component: PlaylistView,
@@ -34,7 +40,7 @@ const router = createRouter({
 })
 
 router.afterEach((to) => {
-  if (to.name && to.name !== 'player') {
+  if (to.name && to.name !== 'player' && to.name !== 'immersive') {
     lastNonPlayerRoute.value = to.fullPath
   }
 })

@@ -99,7 +99,7 @@ function shouldIgnoreSwipeTarget(target) {
 }
 
 function handleTouchStart(event) {
-  if (isDesktop.value || shouldIgnoreSwipeTarget(event.target)) {
+  if (isDesktop.value || route.name === 'immersive' || shouldIgnoreSwipeTarget(event.target)) {
     swiping.value = false
     return
   }
@@ -118,7 +118,7 @@ function handleTouchEnd(event) {
   swiping.value = false
   swipeStartX.value = 0
 
-  if (mobilePanel.value === 'player' && deltaX > 44) {
+  if (mobilePanel.value === 'player' && deltaX > 44 && route.name !== 'immersive') {
     mobilePanel.value = 'nav'
     armTapSuppression()
     return
