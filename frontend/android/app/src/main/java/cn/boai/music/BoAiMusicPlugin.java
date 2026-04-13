@@ -10,6 +10,7 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.pm.ActivityInfo;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
@@ -157,6 +158,21 @@ public class BoAiMusicPlugin extends Plugin {
         } catch (Exception error) {
             call.reject("Failed to read app info", error);
         }
+    }
+
+    @PluginMethod
+    public void lockLandscapeOrientation(PluginCall call) {
+        setRequestedOrientation(call, ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE, "landscape");
+    }
+
+    @PluginMethod
+    public void lockPortraitOrientation(PluginCall call) {
+        setRequestedOrientation(call, ActivityInfo.SCREEN_ORIENTATION_SENSOR_PORTRAIT, "portrait");
+    }
+
+    @PluginMethod
+    public void unlockOrientation(PluginCall call) {
+        setRequestedOrientation(call, ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED, "unspecified");
     }
 
     @PluginMethod
@@ -373,6 +389,25 @@ public class BoAiMusicPlugin extends Plugin {
         if (notificationManager != null) {
             notificationManager.cancel(NOTIFICATION_ID);
         }
+    }
+
+    private void setRequestedOrientation(PluginCall call, int orientation, String label) {
+        if (getActivity() == null) {
+            call.reject("Activity unavailable");
+            return;
+        }
+
+        getActivity().runOnUiThread(() -> {
+            try {
+                getActivity().setRequestedOrientation(orientation);
+                JSObject result = new JSObject();
+                result.put("success", true);
+                result.put("orientation", label);
+                call.resolve(result);
+            } catch (Exception error) {
+                call.reject("Failed to change orientation", error);
+            }
+        });
     }
 
     private void registerUpdateReceiver() {

@@ -1,4 +1,5 @@
 import { ref, onMounted, onBeforeUnmount } from 'vue'
+import { hasNativeBridge, invokeNative } from '../services/runtime'
 
 export function useScreenOrientation() {
   const isSupported = ref(false)
@@ -14,6 +15,24 @@ export function useScreenOrientation() {
   function getCurrentOrientation() {
     if (!isSupported.value) return null
     return screen.orientation?.type || null
+  }
+
+  async function invokeNativeOrientation(method, orientationLabel) {
+    if (!hasNativeBridge()) {
+      return false
+    }
+
+    try {
+      await invokeNative(method)
+      if (orientationLabel) {
+        currentOrientation.value = orientationLabel
+      }
+      isLocked.value = method !== 'unlockOrientation'
+      return true
+    } catch (error) {
+      console.log(`Native orientation ${method} failed:`, error)
+      return false
+    }
   }
 
   async function lock(orientation) {
@@ -34,6 +53,10 @@ export function useScreenOrientation() {
   }
 
   async function unlock() {
+    if (await invokeNativeOrientation('unlockOrientation')) {
+      return true
+    }
+
     if (!isSupported.value) {
       return false
     }
@@ -49,7 +72,12 @@ export function useScreenOrientation() {
   }
 
   async function lockPortrait() {
-    let result = await lock('portrait-primary')
+    let result = await invokeNativeOrientation('lockPortraitOrientation', 'portrait')
+    if (result) {
+      return true
+    }
+
+    result = await lock('portrait-primary')
     if (!result) {
       result = await lock('portrait')
     }
@@ -60,7 +88,12 @@ export function useScreenOrientation() {
   }
 
   async function lockLandscape() {
-    let result = await lock('landscape')
+    let result = await invokeNativeOrientation('lockLandscapeOrientation', 'landscape')
+    if (result) {
+      return true
+    }
+
+    result = await lock('landscape')
     if (!result) {
       result = await lock('landscape-primary')
     }

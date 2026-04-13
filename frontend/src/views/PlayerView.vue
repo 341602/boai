@@ -5,6 +5,8 @@ import { useRouter } from 'vue-router'
 import LyricDisplay from '../components/LyricDisplay.vue'
 import MarqueeText from '../components/MarqueeText.vue'
 import PlaylistPickerModal from '../components/PlaylistPickerModal.vue'
+import { useFullscreen } from '../composables/useFullscreen'
+import { useScreenOrientation } from '../composables/useScreenOrientation'
 import { useViewportMode } from '../composables/useViewportMode'
 import { TEXTS } from '../constants/texts'
 import { lastNonPlayerRoute } from '../router'
@@ -15,6 +17,8 @@ import { formatTime } from '../utils/lyrics'
 const router = useRouter()
 const player = usePlayerStore()
 const { isDesktop } = useViewportMode()
+const { lockLandscape } = useScreenOrientation()
+const { enter } = useFullscreen()
 
 // 屏幕方向检测
 const isLandscape = ref(window.innerWidth > window.innerHeight)
@@ -26,29 +30,21 @@ function handleResize() {
 // 切换沉浸模式 - 跳转到独立沉浸页面
 async function toggleImmersiveMode() {
   try {
-    // 进入横屏和全屏 - 分别处理，即使一个失败另一个也能继续
-    try {
-      if (screen.orientation && screen.orientation.lock) {
-        await screen.orientation.lock('landscape')
-      }
-    } catch (e) {
-      // 屏幕方向锁定失败不影响继续
-    }
-    
-    try {
-      if (document.documentElement.requestFullscreen) {
-        await document.documentElement.requestFullscreen()
-      } else if (document.documentElement.webkitRequestFullscreen) {
-        await document.documentElement.webkitRequestFullscreen()
-      }
-    } catch (e) {
-      // 全屏失败不影响继续
-    }
-    
-    // 跳转到沉浸模式页面
+    await lockLandscape()
+  } catch (error) {
+    // Lock is best-effort. Route navigation still proceeds.
+  }
+
+  try {
+    await enter()
+  } catch (error) {
+    // Fullscreen is best-effort on mobile web and native shells.
+  }
+
+  try {
     router.push({ name: 'immersive' })
   } catch (error) {
-    // 静默处理错误
+    // Ignore navigation edge cases.
   }
 }
 

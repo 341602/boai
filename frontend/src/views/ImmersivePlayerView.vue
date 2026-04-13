@@ -4,6 +4,7 @@ import { ArrowDownToLine, ArrowDownUp, ArrowLeft, Check, Heart, ListMusic, ListP
 import { useRouter } from 'vue-router'
 import MarqueeText from '../components/MarqueeText.vue'
 import PlaylistPickerModal from '../components/PlaylistPickerModal.vue'
+import { useViewportMode } from '../composables/useViewportMode'
 import { TEXTS } from '../constants/texts'
 import { usePlayerStore } from '../stores/player'
 import { formatArtists, getTrackInitial } from '../utils/track'
@@ -12,8 +13,9 @@ import { useFullscreen } from '../composables/useFullscreen'
 
 const router = useRouter()
 const player = usePlayerStore()
-const { isSupported: screenOrientationSupported, lockLandscape, lockPortrait } = useScreenOrientation()
-const { isSupported: fullscreenSupported, isFullscreen, enter, exit, toggle } = useFullscreen()
+const { isMobile } = useViewportMode()
+const { lockLandscape, lockPortrait } = useScreenOrientation()
+const { enter, exit } = useFullscreen()
 
 const showImmersiveControls = ref(false)
 let hideControlsTimer = null
@@ -21,16 +23,39 @@ let hideControlsTimer = null
 const { activeLyricIndex, currentQueue, currentQueueSource, currentSong, isCurrentFavorite, lyricLines, playbackMode, playlists, isPlaying, currentTime } = player
 
 const coverUrl = computed(() => currentSong.value?.album?.picUrl || currentSong.value?.picUrl || '')
+const isLiteImmersive = computed(() => isMobile.value)
+const waveCount = computed(() => (isLiteImmersive.value ? 3 : 6))
+const starCount = computed(() => (isLiteImmersive.value ? 14 : 50))
+const glowOrbIndexes = computed(() => (isLiteImmersive.value ? [1, 2] : [1, 2, 3, 4]))
+const spectrumBarCount = computed(() => (isLiteImmersive.value ? 18 : 36))
 
-const spectrumData = ref([])
 const spectrumArray = ref([])
 let audioContext = null
 let analyser = null
 let source = null
 let animationFrameId = null
 let tempArray = null
-
 let audioInitAttempts = 0
+
+const immersiveStyle = computed(() => ({
+  ...waveColorStyle.value,
+  '--immersive-bg-blur': isLiteImmersive.value ? '42px' : '80px',
+  '--immersive-bg-scale': isLiteImmersive.value ? '1.08' : '1.2',
+}))
+
+const spectrumBars = computed(() => {
+  if (!spectrumArray.value.length) {
+    return []
+  }
+
+  const targetCount = spectrumBarCount.value
+  const step = Math.max(1, Math.floor(spectrumArray.value.length / targetCount))
+
+  return Array.from({ length: targetCount }, (_, index) => {
+    const valueIndex = Math.min(spectrumArray.value.length - 1, index * step)
+    return spectrumArray.value[valueIndex] || 0
+  })
+})
 
 function initAudioAnalysis() {
   if (audioInitAttempts > 5) return
@@ -49,8 +74,8 @@ function initAudioAnalysis() {
 
     audioContext = new (window.AudioContext || window.webkitAudioContext)()
     analyser = audioContext.createAnalyser()
-    analyser.fftSize = 256
-    analyser.smoothingTimeConstant = 0.6
+    analyser.fftSize = isLiteImmersive.value ? 128 : 256
+    analyser.smoothingTimeConstant = isLiteImmersive.value ? 0.72 : 0.6
     analyser.minDecibels = -90
     analyser.maxDecibels = -10
     
@@ -62,7 +87,7 @@ function initAudioAnalysis() {
     tempArray = new Uint8Array(bufferLength)
     spectrumArray.value = new Array(bufferLength).fill(0)
 
-    updateSpectrum()
+    startSpectrumLoop()
   } catch (e) {
     console.error('Audio analysis init failed:', e)
     audioInitAttempts++
@@ -70,22 +95,42 @@ function initAudioAnalysis() {
   }
 }
 
-function updateSpectrum() {
-  if (!analyser) return
-
-  analyser.getByteFrequencyData(tempArray)
-  
-  const newArray = []
-  for (let i = 0; i < tempArray.length; i++) {
-    newArray.push(tempArray[i])
+function stopSpectrumLoop() {
+  if (animationFrameId) {
+    cancelAnimationFrame(animationFrameId)
+    animationFrameId = null
   }
-  spectrumArray.value = newArray
-  
-  animationFrameId = requestAnimationFrame(updateSpectrum)
 }
 
-function getSpectrumBarStyle(index) {
-  const value = spectrumArray.value[index] || 0
+function startSpectrumLoop() {
+  if (animationFrameId || !analyser || !tempArray || currentTheme.value !== 'spectrum') {
+    return
+  }
+
+  let lastFrameTime = 0
+  const frameInterval = isLiteImmersive.value ? 88 : 48
+
+  const tick = (timestamp = 0) => {
+    if (!analyser || !tempArray || currentTheme.value !== 'spectrum') {
+      animationFrameId = null
+      return
+    }
+
+    animationFrameId = requestAnimationFrame(tick)
+
+    if (timestamp - lastFrameTime < frameInterval) {
+      return
+    }
+
+    lastFrameTime = timestamp
+    analyser.getByteFrequencyData(tempArray)
+    spectrumArray.value = Array.from(tempArray)
+  }
+
+  animationFrameId = requestAnimationFrame(tick)
+}
+
+function getSpectrumBarStyle(value) {
   const normalizedValue = Math.pow(value / 255, 0.5)
   const height = Math.max(3, Math.min(100, normalizedValue * 100))
   const { r, g, b } = dominantColor.value
@@ -190,24 +235,23 @@ const waveColorStyle = computed(() => {
 })
 
 const starStyles = ref([])
-let starsInitialized = false
 
 function initStarStyles() {
-  if (starsInitialized) return
   const styles = []
-  for (let i = 0; i < 50; i++) {
+  for (let i = 0; i < starCount.value; i++) {
     const isBright = Math.random() > 0.7
     styles.push({
       left: `${Math.random() * 100}%`,
       top: `${Math.random() * 100}%`,
-      size: isBright ? Math.random() * 3 + 2 : Math.random() * 2 + 1,
+      size: isLiteImmersive.value
+        ? (isBright ? Math.random() * 2 + 1.5 : Math.random() * 1.4 + 0.8)
+        : (isBright ? Math.random() * 3 + 2 : Math.random() * 2 + 1),
       delay: Math.random() * 5,
       duration: Math.random() * 4 + 3,
       isBright
     })
   }
   starStyles.value = styles
-  starsInitialized = true
 }
 
 function getStarStyle(index) {
@@ -307,7 +351,7 @@ const currentQueueTitle = computed(() => {
   return TEXTS.queueTitle
 })
 
-const overlayOpen = computed(() => queueOpen.value || playbackModeOpen.value)
+const overlayOpen = computed(() => queueOpen.value || playbackModeOpen.value || themePickerOpen.value)
 
 function toggleImmersiveControls() {
   showImmersiveControls.value = !showImmersiveControls.value
@@ -451,6 +495,31 @@ watch(coverUrl, (newUrl) => {
   }
 })
 
+watch(
+  currentTheme,
+  async (theme) => {
+    if (theme === 'spectrum') {
+      await nextTick()
+      initAudioAnalysis()
+
+      if (audioContext && audioContext.state === 'suspended') {
+        try {
+          await audioContext.resume()
+        } catch (e) {}
+      }
+
+      startSpectrumLoop()
+      return
+    }
+
+    stopSpectrumLoop()
+  },
+)
+
+watch(starCount, () => {
+  initStarStyles()
+})
+
 onMounted(async () => {
   if (coverUrl.value) {
     extractDominantColor(coverUrl.value)
@@ -470,7 +539,9 @@ onMounted(async () => {
   document.body.classList.remove('immersive-controls-shown')
   
   await nextTick()
-  initAudioAnalysis()
+  if (currentTheme.value === 'spectrum') {
+    initAudioAnalysis()
+  }
   
   const resumeAudio = async () => {
     if (audioContext && audioContext.state === 'suspended') {
@@ -488,9 +559,7 @@ onBeforeUnmount(() => {
   if (hideControlsTimer) {
     clearTimeout(hideControlsTimer)
   }
-  if (animationFrameId) {
-    cancelAnimationFrame(animationFrameId)
-  }
+  stopSpectrumLoop()
   if (audioContext) {
     audioContext.close()
   }
@@ -500,35 +569,37 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <div class="immersive-player" :style="waveColorStyle">
+  <div class="immersive-player" :style="immersiveStyle">
     <div v-if="coverUrl" class="immersive-player__bg-blur" :style="bgStyle" />
 
     <!-- 主题背景 -->
     <!-- 动感水波主题 -->
     <div v-if="currentTheme === 'water-waves'" class="immersive-player__sound-waves">
       <!-- 左边的波纹 -->
-      <div v-for="i in 6" :key="'left-' + i" class="immersive-player__sound-wave immersive-player__sound-wave--left" :style="{ animationDelay: `${i * 1.2}s` }"></div>
+      <div v-for="i in waveCount" :key="'left-' + i" class="immersive-player__sound-wave immersive-player__sound-wave--left" :style="{ animationDelay: `${i * 1.2}s` }"></div>
       
       <!-- 右边的波纹 -->
-      <div v-for="i in 6" :key="'right-' + i" class="immersive-player__sound-wave immersive-player__sound-wave--right" :style="{ animationDelay: `${i * 1.2}s` }"></div>
+      <div v-for="i in waveCount" :key="'right-' + i" class="immersive-player__sound-wave immersive-player__sound-wave--right" :style="{ animationDelay: `${i * 1.2}s` }"></div>
     </div>
 
     <!-- 星空粒子主题 -->
     <div v-if="currentTheme === 'star-particles'" class="immersive-player__stars">
-      <div v-for="i in 50" :key="'star-' + i" class="immersive-player__star" :style="getStarStyle(i)"></div>
+      <div v-for="i in starCount" :key="'star-' + i" class="immersive-player__star" :style="getStarStyle(i - 1)"></div>
     </div>
 
     <!-- 频谱波形主题 -->
     <div v-if="currentTheme === 'spectrum'" class="immersive-player__spectrum">
-      <div v-for="i in spectrumArray.length" :key="'bar-' + i" class="immersive-player__spectrum-bar" :style="getSpectrumBarStyle(i - 1)"></div>
+      <div v-for="(barValue, index) in spectrumBars" :key="'bar-' + index" class="immersive-player__spectrum-bar" :style="getSpectrumBarStyle(barValue)"></div>
     </div>
 
     <!-- 模糊光晕主题 -->
     <div v-if="currentTheme === 'glow'" class="immersive-player__glow">
-      <div class="immersive-player__glow-orb immersive-player__glow-orb--1"></div>
-      <div class="immersive-player__glow-orb immersive-player__glow-orb--2"></div>
-      <div class="immersive-player__glow-orb immersive-player__glow-orb--3"></div>
-      <div class="immersive-player__glow-orb immersive-player__glow-orb--4"></div>
+      <div
+        v-for="orbIndex in glowOrbIndexes"
+        :key="'glow-' + orbIndex"
+        class="immersive-player__glow-orb"
+        :class="`immersive-player__glow-orb--${orbIndex}`"
+      ></div>
     </div>
 
     <div class="immersive-player__content" @click="toggleImmersiveControls">
@@ -766,8 +837,8 @@ onBeforeUnmount(() => {
   background-size: cover;
   background-position: center center;
   background-repeat: no-repeat;
-  filter: blur(80px) saturate(140%) brightness(0.45);
-  transform: scale(1.2);
+  filter: blur(var(--immersive-bg-blur, 80px)) saturate(136%) brightness(0.45);
+  transform: scale(var(--immersive-bg-scale, 1.2));
 }
 
 .immersive-player::after {
@@ -794,6 +865,7 @@ onBeforeUnmount(() => {
   z-index: 2;
   pointer-events: none;
   overflow: hidden;
+  contain: layout paint style;
 }
 
 .immersive-player__sound-wave {
@@ -865,6 +937,7 @@ onBeforeUnmount(() => {
   z-index: 2;
   pointer-events: none;
   overflow: hidden;
+  contain: layout paint style;
 }
 
 .immersive-player__star {
@@ -898,6 +971,7 @@ onBeforeUnmount(() => {
   gap: 4px;
   padding: 0 10%;
   padding-bottom: 10%;
+  contain: layout paint style;
 }
 
 .immersive-player__spectrum-bar {
@@ -917,6 +991,7 @@ onBeforeUnmount(() => {
   z-index: 2;
   pointer-events: none;
   overflow: hidden;
+  contain: layout paint style;
 }
 
 .immersive-player__glow-orb {
@@ -1104,6 +1179,7 @@ onBeforeUnmount(() => {
   height: 100%;
   display: flex;
   flex-direction: column;
+  contain: layout paint style;
 }
 
 .immersive-player__header {
@@ -1291,5 +1367,81 @@ onBeforeUnmount(() => {
   width: 48px;
   height: 48px;
   opacity: 0.9;
+}
+
+@media (max-width: 979px) {
+  .immersive-player__bg-blur {
+    inset: -24px;
+  }
+
+  .immersive-player__sound-wave {
+    border-width: 1px;
+    box-shadow: none;
+    background: transparent;
+  }
+
+  .immersive-player__spectrum {
+    gap: 3px;
+    padding: 0 12%;
+    padding-bottom: 12%;
+  }
+
+  .immersive-player__spectrum-bar {
+    min-width: 5px;
+    max-width: 10px;
+    transition: height 0.12s ease-out;
+    box-shadow: none;
+  }
+
+  .immersive-player__glow-orb {
+    filter: blur(46px) !important;
+    opacity: 0.7;
+  }
+
+  .immersive-player__header {
+    padding: calc(12px + env(safe-area-inset-top, 0px)) 12px 10px;
+  }
+
+  .immersive-player__actions {
+    gap: 3px;
+    padding: 2px;
+    background: rgba(255, 255, 255, 0.08);
+  }
+
+  .immersive-player__header .icon-button {
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    background: rgba(255, 255, 255, 0.14);
+    box-shadow: 0 1px 6px rgba(0, 0, 0, 0.14);
+  }
+
+  .immersive-player__lyrics-center {
+    max-width: none;
+    padding: 20px 24px;
+  }
+
+  .immersive-player__lyric-preview {
+    min-height: 96px;
+    gap: 12px;
+  }
+
+  .immersive-player__lyric-preview-line {
+    transition: color 0.24s ease, opacity 0.24s ease, transform 0.24s ease;
+    text-shadow: 0 2px 10px rgba(0, 0, 0, 0.28);
+  }
+
+  .immersive-player__lyric-preview-line--active {
+    transform: none;
+    filter: none;
+    text-shadow:
+      0 2px 18px rgba(0, 0, 0, 0.36),
+      0 0 18px rgba(255, 255, 255, 0.12);
+  }
+
+  .player-panel,
+  .theme-option {
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+  }
 }
 </style>
