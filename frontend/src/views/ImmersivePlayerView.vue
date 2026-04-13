@@ -25,9 +25,9 @@ const { activeLyricIndex, currentQueue, currentQueueSource, currentSong, isCurre
 const coverUrl = computed(() => currentSong.value?.album?.picUrl || currentSong.value?.picUrl || '')
 const isLiteImmersive = computed(() => isMobile.value)
 const waveCount = computed(() => (isLiteImmersive.value ? 8 : 6))
-const starCount = computed(() => (isLiteImmersive.value ? 14 : 50))
+const starCount = computed(() => (isLiteImmersive.value ? 10 : 50))
 const glowOrbIndexes = computed(() => (isLiteImmersive.value ? [1, 2] : [1, 2, 3, 4]))
-const spectrumBarCount = computed(() => (isLiteImmersive.value ? 18 : 36))
+const spectrumBarCount = computed(() => (isLiteImmersive.value ? 14 : 36))
 
 const spectrumArray = ref([])
 let audioContext = null
@@ -60,14 +60,14 @@ const spectrumBars = computed(() => {
 function getWaveStyle(index, side) {
   const total = Math.max(1, waveCount.value)
   const progress = index / total
-  const edgeFalloff = Math.max(0.04, 0.2 - progress * 0.014)
-  const ringFalloff = Math.max(0.02, 0.08 - progress * 0.006)
-  const shadowFalloff = Math.max(0.03, 0.1 - progress * 0.008)
+  const edgeFalloff = Math.max(0.15, 0.45 - progress * 0.03)
+  const ringFalloff = Math.max(0.12, 0.35 - progress * 0.025)
+  const shadowFalloff = Math.max(0.08, 0.25 - progress * 0.015)
   const drift = side === 'left' ? -1 : 1
 
   return {
-    animationDelay: `${index * 1.12 + progress * 0.55}s`,
-    animationDuration: `${7.6 + progress * 0.6}s`,
+    animationDelay: `${index * 0.8 + progress * 0.4}s`,
+    animationDuration: `${6.5 + progress * 0.5}s`,
     '--wave-core-alpha': edgeFalloff.toFixed(3),
     '--wave-ring-alpha': ringFalloff.toFixed(3),
     '--wave-shadow-alpha': shadowFalloff.toFixed(3),
@@ -126,7 +126,7 @@ function startSpectrumLoop() {
   }
 
   let lastFrameTime = 0
-  const frameInterval = isLiteImmersive.value ? 88 : 48
+  const frameInterval = isLiteImmersive.value ? 150 : 48
 
   const tick = (timestamp = 0) => {
     if (!analyser || !tempArray || currentTheme.value !== 'spectrum') {
@@ -900,40 +900,36 @@ onBeforeUnmount(() => {
   position: absolute;
   top: 50%;
   border-radius: 50%;
-  will-change: transform, opacity, width, height;
-  border: 2px solid rgba(var(--accent-rgb), var(--wave-ring-alpha, 0.06));
+  will-change: transform, opacity;
+  border: 3px solid rgba(var(--accent-rgb), var(--wave-ring-alpha, 0.12));
   background: radial-gradient(
     circle at 50% 50%,
-    rgba(var(--accent-rgb), var(--wave-core-alpha, 0.12)) 0%,
-    rgba(var(--accent-rgb), var(--wave-ring-alpha, 0.06)) 24%,
-    transparent 72%
+    rgba(var(--accent-rgb), var(--wave-core-alpha, 0.15)) 0%,
+    rgba(var(--accent-rgb), var(--wave-shadow-alpha, 0.08)) 45%,
+    transparent 75%
   );
-  box-shadow:
-    0 0 18px rgba(var(--accent-rgb), var(--wave-shadow-alpha, 0.06));
-  opacity: 0.72;
+  opacity: 0.95;
+  box-shadow: 0 0 25px rgba(var(--accent-rgb), var(--wave-shadow-alpha, 0.15));
   transform: translate(calc(var(--wave-drift, 0) * 50%), -50%);
 }
 
 /* 左边的波纹 */
 .immersive-player__sound-wave--left {
   left: 0;
-  animation: waterWaveLeft 5s cubic-bezier(0.25, 0.46, 0.45, 0.94) infinite;
+  animation: waterWaveLeft 6s ease-out infinite;
 }
 
 /* 右边的波纹 */
 .immersive-player__sound-wave--right {
   right: 0;
-  animation: waterWaveRight 5s cubic-bezier(0.25, 0.46, 0.45, 0.94) infinite;
+  animation: waterWaveRight 6s ease-out infinite;
 }
 
 @keyframes waterWaveLeft {
   0% {
     width: 10vh;
     height: 10vh;
-    opacity: 0.8;
-  }
-  50% {
-    opacity: 0.4;
+    opacity: 0.9;
   }
   100% {
     width: 120vh;
@@ -946,10 +942,7 @@ onBeforeUnmount(() => {
   0% {
     width: 10vh;
     height: 10vh;
-    opacity: 0.8;
-  }
-  50% {
-    opacity: 0.4;
+    opacity: 0.9;
   }
   100% {
     width: 120vh;
@@ -1400,26 +1393,25 @@ onBeforeUnmount(() => {
 @media (max-width: 979px) {
   .immersive-player__bg-blur {
     inset: -24px;
+    filter: blur(var(--immersive-bg-blur, 42px)) saturate(130%) brightness(0.45);
   }
 
   .immersive-player__sound-wave {
-    border-width: 1.25px;
+    border-width: 2.5px;
     background: radial-gradient(
       circle at 50% 50%,
-      rgba(var(--accent-rgb), 0.2) 0%,
-      rgba(var(--accent-rgb), 0.1) 18%,
-      rgba(var(--accent-rgb), 0.045) 38%,
-      transparent 72%
+      rgba(var(--accent-rgb), 0.3) 0%,
+      rgba(var(--accent-rgb), 0.15) 45%,
+      transparent 75%
     );
-    box-shadow:
-      0 0 8px rgba(var(--accent-rgb), 0.08),
-      inset 0 0 6px rgba(255, 255, 255, 0.04);
-    opacity: 0.72;
+    box-shadow: 0 0 20px rgba(var(--accent-rgb), 0.18);
+    opacity: 0.95;
+    will-change: transform, opacity;
   }
 
   .immersive-player__sound-wave--left,
   .immersive-player__sound-wave--right {
-    animation-duration: 7.8s;
+    animation-duration: 6s;
   }
 
   .immersive-player__spectrum {
@@ -1431,12 +1423,12 @@ onBeforeUnmount(() => {
   .immersive-player__spectrum-bar {
     min-width: 5px;
     max-width: 10px;
-    transition: height 0.12s ease-out;
-    box-shadow: none;
+    transition: height 0.15s ease-out;
+    box-shadow: 0 0 6px rgba(255, 255, 255, 0.08);
   }
 
   .immersive-player__glow-orb {
-    filter: blur(46px) !important;
+    filter: blur(40px) !important;
     opacity: 0.7;
   }
 
@@ -1446,8 +1438,8 @@ onBeforeUnmount(() => {
 
   .immersive-player__actions {
     gap: 3px;
-    padding: 2px;
-    background: rgba(255, 255, 255, 0.08);
+    padding: 3px;
+    background: rgba(255, 255, 255, 0.09);
   }
 
   .immersive-player__header .icon-button {
@@ -1473,7 +1465,7 @@ onBeforeUnmount(() => {
   }
 
   .immersive-player__lyric-preview-line--active {
-    transform: none;
+    transform: scale(1.05);
     filter: none;
     text-shadow:
       0 2px 18px rgba(0, 0, 0, 0.36),
