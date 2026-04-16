@@ -159,6 +159,7 @@ const state = reactive({
 })
 
 audio.volume = state.volume
+audio.autoplay = false
 if (state.currentSong?.cid) {
   if (state.currentSong.streamUrl) {
     audio.src = state.currentSong.streamUrl
@@ -169,6 +170,80 @@ let searchRequestId = 0
 let trackRequestId = 0
 let bootstrapped = false
 let lastProgressPersistTime = state.currentTime
+
+function delay(ms = 0) {
+  return new Promise((resolve) => {
+    window.setTimeout(resolve, ms)
+  })
+}
+
+function waitForAudioReady(timeout = 800) {
+  return new Promise((resolve) => {
+    let settled = false
+    let timer = null
+
+    const cleanup = () => {
+      audio.removeEventListener('canplay', finish)
+      audio.removeEventListener('loadeddata', finish)
+      audio.removeEventListener('playing', finish)
+
+      if (timer) {
+        window.clearTimeout(timer)
+      }
+    }
+
+    const finish = () => {
+      if (settled) {
+        return
+      }
+
+      settled = true
+      cleanup()
+      resolve()
+    }
+
+    audio.addEventListener('canplay', finish, { once: true })
+    audio.addEventListener('loadeddata', finish, { once: true })
+    audio.addEventListener('playing', finish, { once: true })
+    timer = window.setTimeout(finish, timeout)
+  })
+}
+
+async function requestAudioPlayback({ requestId = trackRequestId, retries = 1, silent = false } = {}) {
+  let lastError = null
+
+  for (let attempt = 0; attempt <= retries; attempt += 1) {
+    if (requestId !== trackRequestId) {
+      return false
+    }
+
+    try {
+      await audio.play()
+      state.isPlaying = true
+      setError('')
+      return true
+    } catch (error) {
+      lastError = error
+
+      if (attempt >= retries) {
+        break
+      }
+
+      await waitForAudioReady(700 + attempt * 350)
+      await delay(120)
+    }
+  }
+
+  if (requestId === trackRequestId) {
+    state.isPlaying = false
+
+    if (!silent) {
+      setError(lastError?.message || TEXTS.playFailed)
+    }
+  }
+
+  return false
+}
 
 function syncLyrics(rawLyric = '') {
   state.lyricRaw = rawLyric
@@ -256,6 +331,7 @@ function mergeTrackLists(currentList, incomingList) {
 }
 
 function clearCurrentPlayback() {
+  audio.autoplay = false
   audio.pause()
   audio.removeAttribute('src')
   audio.load()
@@ -553,7 +629,7 @@ async function loadMoreSearchResults() {
   })
 }
 
-async function loadSong(song, { queue = [], index = 0, source = 'search', autoPlay = true } = {}) {
+async function loadSong(song, { queue = [], index = 0, source = 'search', autoPlay = true, continuation = false } = {}) {
   if (!song?.cid) {
     return
   }
@@ -599,14 +675,25 @@ async function loadSong(song, { queue = [], index = 0, source = 'search', autoPl
     rememberRecent(mergedSong)
     lastProgressPersistTime = 0
 
-    audio.pause()
+    if (!continuation) {
+      audio.pause()
+    }
+
+    audio.autoplay = Boolean(autoPlay)
     audio.src = mergedSong.streamUrl || detail.url || ''
     audio.currentTime = 0
     audio.load()
 
     if (autoPlay) {
-      await audio.play()
-      state.isPlaying = true
+      if (continuation) {
+        state.isPlaying = true
+      }
+
+      await requestAudioPlayback({
+        requestId,
+        retries: continuation ? 4 : 1,
+        silent: continuation,
+      })
     }
   } catch (error) {
     if (requestId !== trackRequestId) {
@@ -665,7 +752,7 @@ async function playCollection(list, index, source) {
   })
 }
 
-async function playQueueIndex(index) {
+async function playQueueIndex(index, options = {}) {
   const nextIndex = Number(index)
 
   if (!state.currentQueue.length || !Number.isFinite(nextIndex) || nextIndex < 0 || nextIndex >= state.currentQueue.length) {
@@ -677,6 +764,7 @@ async function playQueueIndex(index) {
     index: nextIndex,
     source: state.currentQueueSource,
     autoPlay: true,
+    continuation: Boolean(options.continuation),
   })
 }
 
@@ -711,20 +799,18 @@ async function togglePlayback() {
   }
 
   if (audio.paused) {
-    try {
-      await audio.play()
-      state.isPlaying = true
-    } catch (error) {
-      setError(error?.message || TEXTS.playFailed)
-    }
+    await requestAudioPlayback({
+      retries: 1,
+    })
     return
   }
 
   audio.pause()
+  audio.autoplay = false
   state.isPlaying = false
 }
 
-async function playNext() {
+async function playNext(options = {}) {
   if (!state.currentQueue.length) {
     return
   }
@@ -740,14 +826,16 @@ async function playNext() {
       } while (nextIndex === state.currentIndex)
     }
   } else {
-    nextIndex = state.currentIndex >= 0 ? state.currentIndex + 1 : 0
+    nextIndex = state.currentIndex >= 0 ? (state.currentIndex + 1) % state.currentQueue.length : 0
   }
 
   if (nextIndex < 0 || nextIndex >= state.currentQueue.length) {
     return
   }
 
-  await playQueueIndex(nextIndex)
+  await playQueueIndex(nextIndex, {
+    continuation: Boolean(options.continuation),
+  })
 }
 
 async function playPrevious() {
@@ -772,7 +860,10 @@ async function playPrevious() {
       } while (previousIndex === state.currentIndex)
     }
   } else {
-    previousIndex = state.currentIndex > 0 ? state.currentIndex - 1 : 0
+    previousIndex =
+      state.currentIndex > 0
+        ? state.currentIndex - 1
+        : Math.max(0, state.currentQueue.length - 1)
   }
 
   await playQueueIndex(previousIndex)
@@ -792,12 +883,9 @@ async function playFromTime(value) {
     return
   }
 
-  try {
-    await audio.play()
-    state.isPlaying = true
-  } catch (error) {
-    setError(error?.message || TEXTS.playFailed)
-  }
+  await requestAudioPlayback({
+    retries: 1,
+  })
 }
 
 function isFavorite(cid) {
@@ -862,45 +950,49 @@ function handleAudioError() {
 }
 
 function getNativeNotificationActionState() {
-  const queueLength = state.currentQueue.length
-  const hasMultipleTracks = queueLength > 1
-  const isOrderMode = state.playbackMode === PLAYBACK_MODES.order
+  const hasMultipleTracks = state.currentQueue.length > 1
 
   return {
-    hasPrevious:
-      state.currentTime > 3 ||
-      (isOrderMode ? state.currentIndex > 0 : hasMultipleTracks),
-    hasNext:
-      isOrderMode
-        ? state.currentIndex >= 0 && state.currentIndex < queueLength - 1
-        : hasMultipleTracks,
+    hasPrevious: state.currentTime > 3 || hasMultipleTracks,
+    hasNext: hasMultipleTracks,
   }
 }
 
 async function handleAudioEnded() {
-  state.isPlaying = false
-
   if (!state.currentQueue.length) {
+    audio.autoplay = false
+    state.isPlaying = false
     return
   }
 
   if (state.playbackMode === PLAYBACK_MODES.single) {
-    await playQueueIndex(state.currentIndex >= 0 ? state.currentIndex : 0)
+    state.isPlaying = true
+    await playQueueIndex(state.currentIndex >= 0 ? state.currentIndex : 0, {
+      continuation: true,
+    })
     return
   }
 
   if (state.playbackMode === PLAYBACK_MODES.shuffle) {
-    await playNext()
+    state.isPlaying = true
+    await playNext({
+      continuation: true,
+    })
     return
   }
 
   const nextIndex = state.currentIndex + 1
 
   if (nextIndex >= state.currentQueue.length) {
+    audio.autoplay = false
+    state.isPlaying = false
     return
   }
 
-  await playQueueIndex(nextIndex)
+  state.isPlaying = true
+  await playQueueIndex(nextIndex, {
+    continuation: true,
+  })
 }
 
 function attachAudioListeners() {

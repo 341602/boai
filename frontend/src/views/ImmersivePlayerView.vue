@@ -234,10 +234,10 @@ async function extractDominantColor(imageUrl) {
 }
 
 const THEMES = [
-  { id: 'water-waves', name: '姘存尝绾?, icon: '馃寠' },
-  { id: 'star-particles', name: '绻佹槦', icon: '鉁? },
-  { id: 'spectrum', name: '寰嬪姩', icon: '馃幍' },
-  { id: 'glow', name: '鍏夋檿', icon: '馃挮' }
+  { id: 'water-waves', name: '水波纹', icon: '水' },
+  { id: 'star-particles', name: '繁星', icon: '星' },
+  { id: 'spectrum', name: '律动', icon: '律' },
+  { id: 'glow', name: '光晕', icon: '光' },
 ]
 
 const currentTheme = ref(localStorage.getItem('immersive-theme') || 'water-waves')
@@ -682,8 +682,8 @@ onBeforeUnmount(() => {
           <button
             class="icon-button"
             type="button"
-            title="涓婚"
-            aria-label="涓婚"
+            title="主题"
+            aria-label="主题"
             @click.stop="themePickerOpen = !themePickerOpen"
           >
             <Palette class="button-icon" />
@@ -842,10 +842,10 @@ onBeforeUnmount(() => {
       <section class="surface player-panel player-panel--theme" @click.stop>
         <header class="player-panel__header">
           <div class="player-panel__meta">
-            <span>濞屽韫堝Ο鈥崇础</span>
-            <h2>闁瀚ㄦ稉濠氼暯</h2>
+            <span>沉浸主题</span>
+            <h2>选择视觉效果</h2>
           </div>
-          <button class="icon-button" type="button" title="閸忔娊妫? aria-label="閸忔娊妫? @click="themePickerOpen = false">
+          <button class="icon-button" type="button" :title="TEXTS.close" :aria-label="TEXTS.close" @click="themePickerOpen = false">
             <X class="button-icon" />
           </button>
         </header>
