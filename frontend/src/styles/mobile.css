@@ -1887,6 +1887,464 @@ html[data-theme='dark'] .app-root--mobile .playlist-sidebar__create-icon {
   border-color: rgba(var(--accent-rgb), 0.16);
 }
 
+/* ================================================================
+   MOBILE APP VISUAL UNIFICATION
+   Keep non-player pages in the same calm glass language as PlayerView.
+   ================================================================ */
+
+@media (max-width: 979px) {
+  .app-root--mobile {
+    --mobile-glass: rgba(255, 255, 255, 0.075);
+    --mobile-glass-strong: rgba(255, 255, 255, 0.12);
+    --mobile-glass-soft: rgba(255, 255, 255, 0.052);
+    --mobile-glass-line: rgba(255, 255, 255, 0.14);
+    --mobile-text-primary: rgba(248, 250, 252, 0.94);
+    --mobile-text-secondary: rgba(226, 232, 240, 0.62);
+    --mobile-text-tertiary: rgba(203, 213, 225, 0.42);
+    --mobile-shadow: 0 18px 42px rgba(2, 6, 23, 0.22);
+    --mobile-button-bg: rgba(255, 255, 255, 0.105);
+    --mobile-active-bg: rgba(255, 255, 255, 0.16);
+    color: var(--mobile-text-primary);
+    background:
+      radial-gradient(110% 72% at 50% -12%, rgba(125, 144, 176, 0.3), transparent 48%),
+      radial-gradient(82% 58% at 10% 12%, rgba(205, 215, 232, 0.12), transparent 58%),
+      radial-gradient(70% 52% at 92% 68%, rgba(94, 111, 135, 0.2), transparent 58%),
+      linear-gradient(180deg, #151a22 0%, #10151c 42%, #0b1017 100%);
+  }
+
+  .app-root--mobile::before {
+    background:
+      radial-gradient(42% 28% at 52% 6%, rgba(255, 255, 255, 0.14), transparent 70%),
+      linear-gradient(135deg, rgba(255, 255, 255, 0.06), transparent 42%);
+    filter: blur(72px);
+    opacity: 0.82;
+  }
+
+  .app-root--mobile::after {
+    right: -86px;
+    bottom: 8vh;
+    width: 260px;
+    height: 260px;
+    background: rgba(118, 137, 166, 0.18);
+    filter: blur(96px);
+    opacity: 0.88;
+  }
+
+  .app-root--mobile .app-brand {
+    color: rgba(241, 245, 249, 0.78);
+    letter-spacing: 0.28em;
+    font-weight: 760;
+    opacity: 0.88;
+  }
+
+  .app-root--mobile .page-shell--home,
+  .app-root--mobile .page-shell--playlist,
+  .app-root--mobile .page-shell--settings {
+    width: min(460px, calc(100% - 24px));
+    margin-inline: auto;
+    padding-top: calc(78px + env(safe-area-inset-top, 0px));
+    gap: 12px;
+  }
+
+  .app-root--mobile .page-shell--home .surface,
+  .app-root--mobile .page-shell--playlist .surface,
+  .app-root--mobile .page-shell--settings .surface,
+  .app-root--mobile .playlist-modal,
+  .app-root--mobile .confirm-dialog,
+  .app-root--mobile .modal {
+    background:
+      linear-gradient(180deg, rgba(255, 255, 255, 0.105), rgba(255, 255, 255, 0.04)),
+      var(--mobile-glass);
+    border-color: var(--mobile-glass-line);
+    box-shadow: var(--mobile-shadow);
+    backdrop-filter: blur(18px) saturate(128%);
+    -webkit-backdrop-filter: blur(18px) saturate(128%);
+  }
+
+  .app-root--mobile .page-shell--home .surface::before,
+  .app-root--mobile .page-shell--playlist .surface::before,
+  .app-root--mobile .page-shell--settings .surface::before {
+    background:
+      linear-gradient(180deg, rgba(255, 255, 255, 0.12), transparent 36%),
+      radial-gradient(circle at 20% 0%, rgba(255, 255, 255, 0.12), transparent 42%);
+  }
+
+  .app-root--mobile .page-shell--home .surface::after,
+  .app-root--mobile .page-shell--playlist .surface::after,
+  .app-root--mobile .page-shell--settings .surface::after {
+    border-color: rgba(255, 255, 255, 0.1);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  }
+
+  .app-root--mobile .page-header::before {
+    display: none;
+  }
+
+  .app-root--mobile .page-header h1,
+  .app-root--mobile .section-card__header h2,
+  .app-root--mobile .playlist-sidebar__headline h2,
+  .app-root--mobile .playlist-stage__meta h2 {
+    color: var(--mobile-text-primary);
+  }
+
+  .app-root--mobile .section-card__subtitle,
+  .app-root--mobile .playlist-stage__meta p,
+  .app-root--mobile .playlist-sidebar__header-count,
+  .app-root--mobile .playlist-sidebar__mobile-custom-header span:last-child {
+    color: var(--mobile-text-secondary);
+  }
+
+  .app-root--mobile .hero-panel,
+  .app-root--mobile .section-card,
+  .app-root--mobile .playlist-sidebar,
+  .app-root--mobile .playlist-stage,
+  .app-root--mobile .settings-section {
+    padding: 14px;
+    border-radius: 20px;
+  }
+
+  .app-root--mobile .hero-panel {
+    padding: 16px;
+  }
+
+  .app-root--mobile .hero-panel__search {
+    position: relative;
+  }
+
+  .app-root--mobile .search-bar {
+    grid-template-columns: minmax(0, 1fr) 50px;
+    gap: 10px;
+  }
+
+  .app-root--mobile .search-bar__field {
+    min-height: 56px;
+    border-radius: 18px;
+    background:
+      linear-gradient(180deg, rgba(255, 255, 255, 0.09), rgba(255, 255, 255, 0.035)),
+      rgba(255, 255, 255, 0.065);
+    border-color: rgba(255, 255, 255, 0.12);
+    color: var(--mobile-text-primary);
+    backdrop-filter: blur(16px) saturate(126%);
+    -webkit-backdrop-filter: blur(16px) saturate(126%);
+  }
+
+  .app-root--mobile .search-bar__field input {
+    color: var(--mobile-text-primary);
+  }
+
+  .app-root--mobile .search-bar__field input::placeholder,
+  .app-root--mobile .search-bar__field span {
+    color: var(--mobile-text-tertiary);
+  }
+
+  .app-root--mobile .search-bar__button,
+  .app-root--mobile .icon-button,
+  .app-root--mobile .plain-button,
+  .app-root--mobile .nav-pill,
+  .app-root--mobile .global-player__nav-action {
+    background:
+      linear-gradient(180deg, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0.045)),
+      var(--mobile-button-bg);
+    border-color: rgba(255, 255, 255, 0.13);
+    color: var(--mobile-text-primary);
+    box-shadow: none;
+    backdrop-filter: blur(16px) saturate(128%);
+    -webkit-backdrop-filter: blur(16px) saturate(128%);
+  }
+
+  .app-root--mobile .search-bar__button {
+    width: 50px;
+    min-width: 50px;
+    min-height: 56px;
+    border-radius: 18px;
+  }
+
+  .app-root--mobile .icon-button--solid,
+  .app-root--mobile .solid-button {
+    background:
+      linear-gradient(180deg, rgba(255, 255, 255, 0.18), rgba(255, 255, 255, 0.055)),
+      rgba(255, 255, 255, 0.16);
+    border-color: rgba(255, 255, 255, 0.18);
+    color: #fff;
+    box-shadow: none;
+  }
+
+  .app-root--mobile .icon-button--active {
+    background:
+      linear-gradient(180deg, rgba(255, 255, 255, 0.22), rgba(255, 255, 255, 0.08)),
+      rgba(255, 255, 255, 0.18);
+    border-color: rgba(255, 255, 255, 0.24);
+    color: #fff;
+  }
+
+  .app-root--mobile .search-table-panel {
+    min-height: min(62vh, 620px);
+  }
+
+  .app-root--mobile .search-table {
+    min-height: 0;
+    max-height: calc(100vh - 314px - var(--global-bar-height));
+    overflow-y: auto;
+    padding: 2px 0 74px;
+    background: transparent;
+    border: 0;
+    box-shadow: none;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+  }
+
+  .app-root--mobile .search-table__row,
+  .app-root--mobile .playlist-track-row,
+  .app-root--mobile .player-queue-row {
+    min-height: 72px;
+    padding: 10px 4px;
+    border-radius: 0;
+    border: 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    background: transparent;
+    box-shadow: none;
+  }
+
+  .app-root--mobile .search-table__row--active,
+  .app-root--mobile .playlist-track-row--active,
+  .app-root--mobile .player-queue-row--active {
+    margin-block: 4px;
+    padding-inline: 10px;
+    border-bottom-color: transparent;
+    border-radius: 18px;
+    background:
+      linear-gradient(180deg, rgba(255, 255, 255, 0.13), rgba(255, 255, 255, 0.045)),
+      rgba(255, 255, 255, 0.08);
+  }
+
+  .app-root--mobile .search-table__index,
+  .app-root--mobile .playlist-track-row__index,
+  .app-root--mobile .player-queue-row__index {
+    color: var(--mobile-text-tertiary);
+    font-size: 0.76rem;
+    font-weight: 760;
+    letter-spacing: 0.08em;
+  }
+
+  .app-root--mobile .search-table__cover,
+  .app-root--mobile .playlist-track-row__cover,
+  .app-root--mobile .player-queue-row__cover {
+    width: 48px;
+    height: 48px;
+    border-radius: 14px;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    box-shadow: 0 10px 18px rgba(2, 6, 23, 0.24);
+  }
+
+  .app-root--mobile .search-table__title strong,
+  .app-root--mobile .playlist-track-row__meta strong,
+  .app-root--mobile .player-queue-row__meta strong {
+    color: var(--mobile-text-primary);
+    font-size: 0.98rem;
+    letter-spacing: -0.015em;
+  }
+
+  .app-root--mobile .search-table__title p,
+  .app-root--mobile .playlist-track-row__meta p,
+  .app-root--mobile .player-queue-row__meta p {
+    color: var(--mobile-text-secondary);
+    font-size: 0.82rem;
+  }
+
+  .app-root--mobile .search-table__actions .icon-button,
+  .app-root--mobile .playlist-track-row__actions .icon-button,
+  .app-root--mobile .player-queue-row__actions .icon-button {
+    width: 34px;
+    min-width: 34px;
+    min-height: 34px;
+    background: rgba(255, 255, 255, 0.09);
+    border-color: rgba(255, 255, 255, 0.12);
+  }
+
+  .app-root--mobile .search-table__status,
+  .app-root--mobile .empty-state {
+    color: var(--mobile-text-secondary);
+    border-color: rgba(255, 255, 255, 0.1);
+    background: rgba(255, 255, 255, 0.04);
+  }
+
+  .app-root--mobile .recent-searches {
+    margin-top: 12px;
+    padding: 10px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 18px;
+    background: rgba(255, 255, 255, 0.06);
+    backdrop-filter: blur(16px) saturate(126%);
+    -webkit-backdrop-filter: blur(16px) saturate(126%);
+  }
+
+  .app-root--mobile .recent-searches__item,
+  .app-root--mobile .recent-searches__chip {
+    color: var(--mobile-text-primary);
+    background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(255, 255, 255, 0.1);
+  }
+
+  .app-root--mobile .playlist-sidebar {
+    gap: 12px;
+  }
+
+  .app-root--mobile .playlist-sidebar__mobile-fixed-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) 56px;
+    gap: 8px;
+  }
+
+  .app-root--mobile .playlist-sidebar__item--fixed,
+  .app-root--mobile .playlist-sidebar__item--custom,
+  .app-root--mobile .playlist-sidebar__mobile-empty,
+  .app-root--mobile .settings-choice,
+  .app-root--mobile .settings-row {
+    background:
+      linear-gradient(180deg, rgba(255, 255, 255, 0.095), rgba(255, 255, 255, 0.035)),
+      rgba(255, 255, 255, 0.055);
+    border-color: rgba(255, 255, 255, 0.11);
+    color: var(--mobile-text-primary);
+    box-shadow: none;
+  }
+
+  .app-root--mobile .playlist-sidebar__item--fixed {
+    min-height: 74px;
+    grid-template-columns: 1fr;
+    align-content: center;
+    justify-items: start;
+    gap: 6px;
+    padding: 12px;
+    border-radius: 18px;
+  }
+
+  .app-root--mobile .playlist-sidebar__item--fixed.playlist-sidebar__item--active,
+  .app-root--mobile .playlist-sidebar__item--custom.playlist-sidebar__item--active,
+  .app-root--mobile .settings-choice--active {
+    background:
+      linear-gradient(180deg, rgba(255, 255, 255, 0.17), rgba(255, 255, 255, 0.07)),
+      rgba(255, 255, 255, 0.12);
+    border-color: rgba(255, 255, 255, 0.2);
+  }
+
+  .app-root--mobile .playlist-sidebar__mobile-icon {
+    width: 26px;
+    height: 26px;
+    color: var(--mobile-text-primary);
+    background: rgba(255, 255, 255, 0.08);
+  }
+
+  .app-root--mobile .playlist-sidebar__item-count {
+    justify-self: start;
+    color: var(--mobile-text-secondary);
+  }
+
+  .app-root--mobile .playlist-sidebar__create-icon {
+    width: 56px;
+    min-width: 56px;
+    min-height: 74px;
+    border-radius: 18px;
+  }
+
+  .app-root--mobile .playlist-sidebar__mobile-custom-row {
+    gap: 8px;
+  }
+
+  .app-root--mobile .playlist-sidebar__item--custom {
+    flex-basis: 142px;
+    min-height: 68px;
+    border-radius: 18px;
+    padding: 12px;
+  }
+
+  .app-root--mobile .playlist-stage__list {
+    padding-bottom: 72px;
+  }
+
+  .app-root--mobile .settings-choice-list {
+    gap: 10px;
+  }
+
+  .app-root--mobile .settings-choice {
+    min-height: 58px;
+    border-radius: 18px;
+  }
+
+  .app-root--mobile .settings-choice .button-icon,
+  .app-root--mobile .settings-row .button-icon,
+  .app-root--mobile .section-card__header .button-icon {
+    color: var(--mobile-text-secondary);
+  }
+
+  .app-root--mobile .settings-choice--active .button-icon:last-child {
+    color: var(--mobile-text-primary);
+  }
+
+  .app-root--mobile .global-player {
+    background:
+      linear-gradient(180deg, rgba(255, 255, 255, 0.14), rgba(255, 255, 255, 0.052)),
+      rgba(18, 23, 31, 0.72);
+    border-color: rgba(255, 255, 255, 0.18);
+    box-shadow: 0 20px 44px rgba(2, 6, 23, 0.34);
+    color: var(--mobile-text-primary);
+    backdrop-filter: blur(20px) saturate(132%);
+    -webkit-backdrop-filter: blur(20px) saturate(132%);
+  }
+
+  .app-root--mobile .global-player__meta strong {
+    color: var(--mobile-text-primary);
+  }
+
+  .app-root--mobile .global-player__meta p,
+  .app-root--mobile .global-player__time {
+    color: var(--mobile-text-secondary);
+  }
+
+  .app-root--mobile .global-player__range::-webkit-slider-runnable-track {
+    background: linear-gradient(to right, rgba(255, 255, 255, 0.88) var(--progress), rgba(255, 255, 255, 0.16) var(--progress));
+  }
+
+  .app-root--mobile .global-player__range::-webkit-slider-thumb {
+    background: rgba(255, 255, 255, 0.92);
+  }
+
+  .app-root--mobile .modal-overlay,
+  .app-root--mobile .modal-backdrop,
+  .app-root--mobile .player-panel-overlay {
+    background: rgba(3, 7, 18, 0.38);
+    backdrop-filter: blur(10px) saturate(120%);
+    -webkit-backdrop-filter: blur(10px) saturate(120%);
+  }
+
+  .app-root--mobile .player-panel,
+  .app-root--mobile .playlist-modal,
+  .app-root--mobile .confirm-dialog,
+  .app-root--mobile .modal {
+    color: var(--mobile-text-primary);
+    background:
+      linear-gradient(180deg, rgba(255, 255, 255, 0.13), rgba(255, 255, 255, 0.05)),
+      rgba(17, 22, 30, 0.86);
+    border-color: rgba(255, 255, 255, 0.16);
+  }
+
+  .app-root--mobile .player-mode-list,
+  .app-root--mobile .player-queue-list,
+  .app-root--mobile .playlist-modal__create,
+  .app-root--mobile .playlist-modal__list,
+  .app-root--mobile .playlist-modal__item,
+  .app-root--mobile .playlist-modal__field input,
+  .app-root--mobile .empty-state--modal,
+  .app-root--mobile .update-info {
+    color: var(--mobile-text-primary);
+    background: rgba(255, 255, 255, 0.07);
+    border-color: rgba(255, 255, 255, 0.12);
+  }
+
+  .app-root--mobile .playlist-modal__field input::placeholder {
+    color: var(--mobile-text-tertiary);
+  }
+}
+
 @media (min-width: 720px) and (max-width: 979px) {
   .app-root--mobile {
     --global-bar-height: 90px;

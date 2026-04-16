@@ -1,5 +1,5 @@
 <script setup>
-import { computed, onBeforeUnmount, watch } from 'vue'
+import { computed, onBeforeUnmount, ref, watch } from 'vue'
 import { ArrowDownToLine, ArrowDownUp, ArrowLeft, Check, Heart, House, ListMusic, ListPlus, Maximize2, Pause, Play, Repeat1, Settings2, Shuffle, SkipBack, SkipForward, Trash2, X } from 'lucide-vue-next'
 import { useRouter } from 'vue-router'
 import LyricDisplay from '../components/LyricDisplay.vue'
