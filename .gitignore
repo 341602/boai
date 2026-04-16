@@ -17,6 +17,7 @@ frontend/android/*.jks
 frontend/android/*.keystore
 frontend/android/app/build/
 frontend/android/build/
+frontend/android/.gradle-user/
 
 *.log
 frontend/vite-dev.out.log
@@ -36,3 +37,4 @@ verify-player-page.png
 width-glass-home.png
 
 migu-music-api-1.0.1.tgz
+release/

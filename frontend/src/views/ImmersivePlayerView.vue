@@ -18,11 +18,14 @@ const { lockLandscape, lockPortrait } = useScreenOrientation()
 const { enter, exit } = useFullscreen()
 
 const showImmersiveControls = ref(false)
+const trackPulse = ref(false)
 let hideControlsTimer = null
+let trackPulseTimer = null
 
 const { activeLyricIndex, currentQueue, currentQueueSource, currentSong, isCurrentFavorite, lyricLines, playbackMode, playlists, isPlaying, currentTime } = player
 
 const coverUrl = computed(() => currentSong.value?.album?.picUrl || currentSong.value?.picUrl || '')
+const currentTrackKey = computed(() => currentSong.value?.cid || currentSong.value?.id || '')
 const isLiteImmersive = computed(() => isMobile.value)
 const waveCount = computed(() => (isLiteImmersive.value ? 8 : 6))
 const starCount = computed(() => (isLiteImmersive.value ? 10 : 50))
@@ -57,21 +60,25 @@ const spectrumBars = computed(() => {
   })
 })
 
-function getWaveStyle(index, side) {
+function getWaveStyle(index) {
   const total = Math.max(1, waveCount.value)
   const progress = index / total
-  const edgeFalloff = Math.max(0.15, 0.45 - progress * 0.03)
-  const ringFalloff = Math.max(0.12, 0.35 - progress * 0.025)
-  const shadowFalloff = Math.max(0.08, 0.25 - progress * 0.015)
-  const drift = side === 'left' ? -1 : 1
+  const edgeFalloff = Math.max(0.08, 0.26 - progress * 0.017)
+  const ringFalloff = Math.max(0.06, 0.2 - progress * 0.012)
+  const shadowFalloff = Math.max(0.05, 0.16 - progress * 0.01)
+  const driftX = (index % 2 === 0 ? -1 : 1) * (1.4 + progress * 1.6)
+  const driftY = ((index % 3) - 1) * (0.9 + progress * 1.1)
+  const baseSize = isLiteImmersive.value ? 34 : 28
 
   return {
-    animationDelay: `${index * 0.8 + progress * 0.4}s`,
-    animationDuration: `${6.5 + progress * 0.5}s`,
+    animationDelay: `${index * 0.86 + progress * 0.35}s`,
+    '--ripple-duration': `${7.4 + progress * 1.1}s`,
+    '--ripple-size': `${baseSize + progress * 18}vmin`,
     '--wave-core-alpha': edgeFalloff.toFixed(3),
     '--wave-ring-alpha': ringFalloff.toFixed(3),
     '--wave-shadow-alpha': shadowFalloff.toFixed(3),
-    '--wave-drift': drift,
+    '--wave-drift-x': driftX.toFixed(2),
+    '--wave-drift-y': driftY.toFixed(2),
   }
 }
 
@@ -227,10 +234,10 @@ async function extractDominantColor(imageUrl) {
 }
 
 const THEMES = [
-  { id: 'water-waves', name: '水波纹', icon: '🌊' },
-  { id: 'star-particles', name: '繁星', icon: '✨' },
-  { id: 'spectrum', name: '律动', icon: '🎵' },
-  { id: 'glow', name: '光晕', icon: '💫' }
+  { id: 'water-waves', name: '姘存尝绾?, icon: '馃寠' },
+  { id: 'star-particles', name: '绻佹槦', icon: '鉁? },
+  { id: 'spectrum', name: '寰嬪姩', icon: '馃幍' },
+  { id: 'glow', name: '鍏夋檿', icon: '馃挮' }
 ]
 
 const currentTheme = ref(localStorage.getItem('immersive-theme') || 'water-waves')
@@ -538,6 +545,18 @@ watch(starCount, () => {
   initStarStyles()
 })
 
+watch(currentTrackKey, (next, previous) => {
+  if (!next || !previous || next === previous) {
+    return
+  }
+
+  trackPulse.value = true
+  window.clearTimeout(trackPulseTimer)
+  trackPulseTimer = window.setTimeout(() => {
+    trackPulse.value = false
+  }, 950)
+})
+
 onMounted(async () => {
   if (coverUrl.value) {
     extractDominantColor(coverUrl.value)
@@ -577,6 +596,7 @@ onBeforeUnmount(() => {
   if (hideControlsTimer) {
     clearTimeout(hideControlsTimer)
   }
+  window.clearTimeout(trackPulseTimer)
   stopSpectrumLoop()
   if (audioContext) {
     audioContext.close()
@@ -587,40 +607,41 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <div class="immersive-player" :style="immersiveStyle">
+  <div
+    class="immersive-player"
+    :class="{
+      'immersive-player--playing': isPlaying,
+      'immersive-player--paused': !isPlaying,
+      'immersive-player--track-pulse': trackPulse,
+    }"
+    :style="immersiveStyle"
+  >
     <div v-if="coverUrl" class="immersive-player__bg-blur" :style="bgStyle" />
 
-    <!-- 主题背景 -->
-    <!-- 动感水波主题 -->
+    <!-- 娑撳顣介懗灞炬珯 -->
+    <!-- 閸斻劍鍔呭瀛樺皾娑撳顣?-->
     <div v-if="currentTheme === 'water-waves'" class="immersive-player__sound-waves">
-      <!-- 左边的波纹 -->
+      <div class="immersive-player__water-surface"></div>
+      <div class="immersive-player__water-caustics"></div>
       <div
         v-for="i in waveCount"
-        :key="'left-' + i"
-        class="immersive-player__sound-wave immersive-player__sound-wave--left"
-        :style="getWaveStyle(i - 1, 'left')"
-      ></div>
-      
-      <!-- 右边的波纹 -->
-      <div
-        v-for="i in waveCount"
-        :key="'right-' + i"
-        class="immersive-player__sound-wave immersive-player__sound-wave--right"
-        :style="getWaveStyle(i - 1, 'right')"
+        :key="'ripple-' + i"
+        class="immersive-player__ripple"
+        :style="getWaveStyle(i - 1)"
       ></div>
     </div>
 
-    <!-- 星空粒子主题 -->
+    <!-- 閺勭喓鈹栫划鎺戠摍娑撳顣?-->
     <div v-if="currentTheme === 'star-particles'" class="immersive-player__stars">
       <div v-for="i in starCount" :key="'star-' + i" class="immersive-player__star" :style="getStarStyle(i - 1)"></div>
     </div>
 
-    <!-- 频谱波形主题 -->
+    <!-- 妫版垼姘ㄥ▔銏犺埌娑撳顣?-->
     <div v-if="currentTheme === 'spectrum'" class="immersive-player__spectrum">
       <div v-for="(barValue, index) in spectrumBars" :key="'bar-' + index" class="immersive-player__spectrum-bar" :style="getSpectrumBarStyle(barValue)"></div>
     </div>
 
-    <!-- 模糊光晕主题 -->
+    <!-- 濡紕纭﹂崗澶嬫娑撳顣?-->
     <div v-if="currentTheme === 'glow'" class="immersive-player__glow">
       <div
         v-for="orbIndex in glowOrbIndexes"
@@ -631,7 +652,7 @@ onBeforeUnmount(() => {
     </div>
 
     <div class="immersive-player__content" @click="toggleImmersiveControls">
-      <!-- Header - 点击显示时显示 -->
+      <!-- Header - 閻愮懓鍤弰鍓с仛閺冭埖妯夌粈?-->
       <header v-if="showImmersiveControls" class="immersive-player__header">
         <button class="icon-button" type="button" :title="TEXTS.back" :aria-label="TEXTS.back" @click.stop="exitImmersiveMode">
           <ArrowLeft class="button-icon" />
@@ -661,8 +682,8 @@ onBeforeUnmount(() => {
           <button
             class="icon-button"
             type="button"
-            :title="主题"
-            :aria-label="主题"
+            title="涓婚"
+            aria-label="涓婚"
             @click.stop="themePickerOpen = !themePickerOpen"
           >
             <Palette class="button-icon" />
@@ -690,9 +711,9 @@ onBeforeUnmount(() => {
         </div>
       </header>
 
-      <!-- 居中歌词显示 -->
+      <!-- 鐏炲懍鑵戝宀冪槤閺勫墽銇?-->
       <div class="immersive-player__lyrics-center">
-        <!-- 歌词预览 - 只显示当前的一句 -->
+        <!-- 濮濆矁鐦濇０鍕潔 - 閸欘亝妯夌粈鍝勭秼閸撳秶娈戞稉鈧崣?-->
         <div class="immersive-player__lyric-preview">
           <template v-if="mobilePreview.lines.length && mobilePreview.activeIndex >= 0">
             <p
@@ -816,15 +837,15 @@ onBeforeUnmount(() => {
       </section>
     </div>
 
-    <!-- 主题选择器 -->
+    <!-- 娑撳顣介柅澶嬪閸?-->
     <div v-if="themePickerOpen" class="player-panel-overlay" @click="themePickerOpen = false">
       <section class="surface player-panel player-panel--theme" @click.stop>
         <header class="player-panel__header">
           <div class="player-panel__meta">
-            <span>沉浸模式</span>
-            <h2>选择主题</h2>
+            <span>濞屽韫堝Ο鈥崇础</span>
+            <h2>闁瀚ㄦ稉濠氼暯</h2>
           </div>
-          <button class="icon-button" type="button" title="关闭" aria-label="关闭" @click="themePickerOpen = false">
+          <button class="icon-button" type="button" title="閸忔娊妫? aria-label="閸忔娊妫? @click="themePickerOpen = false">
             <X class="button-icon" />
           </button>
         </header>
@@ -886,7 +907,7 @@ onBeforeUnmount(() => {
   pointer-events: none;
 }
 
-/* 真实水波纹效果 */
+/* 閻喎鐤勫瀛樺皾缁捐鏅ラ弸?*/
 .immersive-player__sound-waves {
   position: absolute;
   inset: 0;
@@ -896,62 +917,137 @@ onBeforeUnmount(() => {
   contain: layout paint style;
 }
 
-.immersive-player__sound-wave {
+  .immersive-player__water-surface {
+  position: absolute;
+  inset: -8%;
+  background:
+    radial-gradient(120% 78% at 50% 58%, rgba(166, 208, 224, 0.16) 0%, rgba(68, 108, 133, 0.04) 60%, transparent 100%),
+    radial-gradient(92% 68% at 50% 46%, rgba(235, 246, 252, 0.12) 0%, rgba(112, 157, 184, 0.06) 42%, transparent 90%),
+    linear-gradient(160deg, rgba(20, 34, 44, 0.22) 0%, rgba(26, 46, 60, 0.08) 50%, rgba(9, 17, 24, 0.26) 100%);
+  transform: scale(1.05);
+  filter: saturate(120%);
+  animation: waterSurfaceDrift 14s ease-in-out infinite alternate;
+}
+
+.immersive-player__water-caustics {
+  position: absolute;
+  inset: -12%;
+  background:
+    repeating-radial-gradient(
+      ellipse at 50% 50%,
+      rgba(225, 245, 255, 0.14) 0,
+      rgba(225, 245, 255, 0.04) 2.2%,
+      rgba(48, 78, 98, 0) 4.5%
+    ),
+    repeating-linear-gradient(
+      116deg,
+      rgba(210, 236, 248, 0.08) 0%,
+      rgba(210, 236, 248, 0) 16%,
+      rgba(210, 236, 248, 0.08) 32%
+    );
+  background-size: 220% 220%, 240% 240%;
+  mix-blend-mode: screen;
+  opacity: 0.54;
+  animation: waterCausticsDrift 16s linear infinite;
+}
+
+.immersive-player__ripple {
   position: absolute;
   top: 50%;
+  left: 50%;
+  width: var(--ripple-size, 34vmin);
+  height: var(--ripple-size, 34vmin);
   border-radius: 50%;
   will-change: transform, opacity;
-  border: 3px solid rgba(var(--accent-rgb), var(--wave-ring-alpha, 0.12));
+  border: 2px solid rgba(var(--accent-rgb), var(--wave-ring-alpha, 0.08));
   background: radial-gradient(
-    circle at 50% 50%,
-    rgba(var(--accent-rgb), var(--wave-core-alpha, 0.15)) 0%,
-    rgba(var(--accent-rgb), var(--wave-shadow-alpha, 0.08)) 45%,
-    transparent 75%
+    circle at 50% 48%,
+    rgba(255, 255, 255, calc(var(--wave-core-alpha, 0.1) * 0.75)) 0%,
+    rgba(var(--accent-rgb), var(--wave-core-alpha, 0.1)) 22%,
+    rgba(var(--accent-rgb), var(--wave-shadow-alpha, 0.06)) 58%,
+    transparent 82%
   );
-  opacity: 0.95;
-  box-shadow: 0 0 25px rgba(var(--accent-rgb), var(--wave-shadow-alpha, 0.15));
-  transform: translate(calc(var(--wave-drift, 0) * 50%), -50%);
+  opacity: 0;
+  box-shadow:
+    0 0 26px rgba(var(--accent-rgb), calc(var(--wave-shadow-alpha, 0.06) * 0.9)),
+    inset 0 0 20px rgba(255, 255, 255, 0.08);
+  transform: translate(-50%, -50%) scale(0.32);
+  animation: waterRipplePulse var(--ripple-duration, 7.4s) cubic-bezier(0.16, 0.48, 0.22, 1) infinite;
 }
 
-/* 左边的波纹 */
-.immersive-player__sound-wave--left {
-  left: 0;
-  animation: waterWaveLeft 6s ease-out infinite;
-}
-
-/* 右边的波纹 */
-.immersive-player__sound-wave--right {
-  right: 0;
-  animation: waterWaveRight 6s ease-out infinite;
-}
-
-@keyframes waterWaveLeft {
+@keyframes waterRipplePulse {
   0% {
-    width: 10vh;
-    height: 10vh;
-    opacity: 0.9;
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.32);
+  }
+  14% {
+    opacity: 0.65;
+  }
+  58% {
+    opacity: 0.24;
   }
   100% {
-    width: 120vh;
-    height: 120vh;
     opacity: 0;
+    transform: translate(
+      calc(-50% + var(--wave-drift-x, 0) * 1vmin),
+      calc(-50% + var(--wave-drift-y, 0) * 1vmin)
+    ) scale(1.5);
   }
 }
 
-@keyframes waterWaveRight {
+@keyframes waterSurfaceDrift {
   0% {
-    width: 10vh;
-    height: 10vh;
-    opacity: 0.9;
+    transform: scale(1.04) translate3d(-1.4%, -0.8%, 0);
+    opacity: 0.74;
   }
   100% {
-    width: 120vh;
-    height: 120vh;
-    opacity: 0;
+    transform: scale(1.08) translate3d(1.1%, 1.4%, 0);
+    opacity: 0.9;
   }
 }
 
-/* 繁星主题 - 精致星空效果 */
+@keyframes waterCausticsDrift {
+  0% {
+    background-position: 0% 22%, 0% 50%;
+  }
+  100% {
+    background-position: 110% 78%, 100% 45%;
+  }
+}
+
+.immersive-player--paused .immersive-player__water-surface {
+  animation-duration: 22s;
+  opacity: 0.58;
+}
+
+.immersive-player--paused .immersive-player__water-caustics {
+  animation-duration: 28s;
+  opacity: 0.22;
+}
+
+.immersive-player--paused .immersive-player__ripple {
+  animation-duration: 11s;
+  opacity: 0.42;
+}
+
+.immersive-player--track-pulse .immersive-player__water-surface {
+  animation: waterSurfaceDrift 9s ease-in-out infinite alternate, immersiveWaterFlash 0.9s ease-out;
+}
+
+.immersive-player--track-pulse .immersive-player__ripple:nth-of-type(3),
+.immersive-player--track-pulse .immersive-player__ripple:nth-of-type(4) {
+  animation-duration: 3.8s;
+  border-color: rgba(255, 255, 255, 0.24);
+}
+
+@keyframes immersiveWaterFlash {
+  0% {
+    filter: saturate(150%) brightness(1.12);
+  }
+  100% {
+    filter: saturate(120%) brightness(1);
+  }
+}
 .immersive-player__stars {
   position: absolute;
   inset: 0;
@@ -979,7 +1075,7 @@ onBeforeUnmount(() => {
   }
 }
 
-/* 律动主题 - 现代频谱可视化 */
+/* 瀵板濮╂稉濠氼暯 - 閻滈鍞０鎴ｆ皑閸欘垵顫嬮崠?*/
 .immersive-player__spectrum {
   position: absolute;
   inset: 0;
@@ -1005,7 +1101,7 @@ onBeforeUnmount(() => {
   box-shadow: 0 0 10px rgba(255, 255, 255, 0.1);
 }
 
-/* 光晕主题 - 优雅氛围光晕 */
+/* 閸忓妾挎稉濠氼暯 - 娴兼﹢娉ゅ娑樻纯閸忓妾?*/
 .immersive-player__glow {
   position: absolute;
   inset: 0;
@@ -1137,7 +1233,7 @@ onBeforeUnmount(() => {
   }
 }
 
-/* 主题选择器样式 */
+/* 娑撳顣介柅澶嬪閸ｃ劍鐗卞?*/
 .player-panel--theme {
   width: min(360px, 100%);
   max-height: none;
@@ -1396,22 +1492,23 @@ onBeforeUnmount(() => {
     filter: blur(var(--immersive-bg-blur, 42px)) saturate(130%) brightness(0.45);
   }
 
-  .immersive-player__sound-wave {
-    border-width: 2.5px;
-    background: radial-gradient(
-      circle at 50% 50%,
-      rgba(var(--accent-rgb), 0.3) 0%,
-      rgba(var(--accent-rgb), 0.15) 45%,
-      transparent 75%
-    );
-    box-shadow: 0 0 20px rgba(var(--accent-rgb), 0.18);
-    opacity: 0.95;
-    will-change: transform, opacity;
+  .immersive-player__water-surface {
+    inset: -10%;
+    animation-duration: 16s;
   }
 
-  .immersive-player__sound-wave--left,
-  .immersive-player__sound-wave--right {
-    animation-duration: 6s;
+  .immersive-player__water-caustics {
+    inset: -14%;
+    opacity: 0.46;
+    animation-duration: 18s;
+  }
+
+  .immersive-player__ripple {
+    border-width: 1.8px;
+    box-shadow:
+      0 0 18px rgba(var(--accent-rgb), 0.16),
+      inset 0 0 12px rgba(255, 255, 255, 0.06);
+    animation-duration: 8.2s;
   }
 
   .immersive-player__spectrum {

@@ -1,5 +1,5 @@
 <script setup>
-import { computed, ref } from 'vue'
+import { computed, onBeforeUnmount, ref, watch } from 'vue'
 import { House, ListMusic, Pause, Play, Settings2, SkipBack, SkipForward } from 'lucide-vue-next'
 import MarqueeText from './MarqueeText.vue'
 import { useRoute, useRouter } from 'vue-router'
@@ -21,6 +21,8 @@ const mobilePanel = ref('player')
 const suppressTap = ref(false)
 const swipeStartX = ref(0)
 const swiping = ref(false)
+const trackChanging = ref(false)
+let trackChangeTimer = null
 
 const mobileNavItems = [
   {
@@ -43,6 +45,8 @@ const mobileNavItems = [
 const mobileTrackStyle = computed(() => ({
   transform: mobilePanel.value === 'player' ? 'translateX(0%)' : 'translateX(-50%)',
 }))
+
+const currentTrackKey = computed(() => player.currentSong.value?.cid || player.currentSong.value?.id || '')
 
 function armTapSuppression() {
   suppressTap.value = true
@@ -129,12 +133,32 @@ function handleTouchEnd(event) {
     armTapSuppression()
   }
 }
+
+watch(currentTrackKey, (next, previous) => {
+  if (!next || !previous || next === previous) {
+    return
+  }
+
+  trackChanging.value = true
+  window.clearTimeout(trackChangeTimer)
+  trackChangeTimer = window.setTimeout(() => {
+    trackChanging.value = false
+  }, 360)
+})
+
+onBeforeUnmount(() => {
+  window.clearTimeout(trackChangeTimer)
+})
 </script>
 
 <template>
   <footer
     class="global-player surface"
-    :class="{ 'global-player--mobile-nav': !isDesktop && mobilePanel === 'nav' }"
+    :class="{
+      'global-player--mobile-nav': !isDesktop && mobilePanel === 'nav',
+      'global-player--playing': player.isPlaying.value,
+      'global-player--track-changing': trackChanging,
+    }"
   >
     <template v-if="isDesktop">
       <button class="global-player__art" type="button" @click="togglePlayerPage">

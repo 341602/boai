@@ -1,5 +1,5 @@
 <script setup>
-import { computed, onBeforeUnmount, ref, watch } from 'vue'
+import { computed, onBeforeUnmount, watch } from 'vue'
 import { ArrowDownToLine, ArrowDownUp, ArrowLeft, Check, Heart, House, ListMusic, ListPlus, Maximize2, Pause, Play, Repeat1, Settings2, Shuffle, SkipBack, SkipForward, Trash2, X } from 'lucide-vue-next'
 import { useRouter } from 'vue-router'
 import LyricDisplay from '../components/LyricDisplay.vue'
@@ -17,15 +17,11 @@ import { formatTime } from '../utils/lyrics'
 const router = useRouter()
 const player = usePlayerStore()
 const { isDesktop } = useViewportMode()
-const { lockLandscape } = useScreenOrientation()
+const { currentOrientation, lockLandscape } = useScreenOrientation()
 const { enter } = useFullscreen()
 
 // 屏幕方向检测
-const isLandscape = ref(window.innerWidth > window.innerHeight)
-
-function handleResize() {
-  isLandscape.value = window.innerWidth > window.innerHeight
-}
+const isLandscape = computed(() => String(currentOrientation.value || '').includes('landscape'))
 
 // 切换沉浸模式 - 跳转到独立沉浸页面
 async function toggleImmersiveMode() {
@@ -48,10 +44,7 @@ async function toggleImmersiveMode() {
   }
 }
 
-// 监听屏幕方向变化
-window.addEventListener('resize', handleResize)
 onBeforeUnmount(() => {
-  window.removeEventListener('resize', handleResize)
   document.body.style.overflow = ''
   document.body.classList.remove('body--lyrics-open')
 })

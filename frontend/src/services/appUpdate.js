@@ -51,6 +51,21 @@ function normalizeVersion(rawVersion = '') {
   return String(rawVersion).trim().replace(/^v/i, '')
 }
 
+function compareVersions(version1, version2) {
+  const left = normalizeVersion(version1).split('.').map((item) => Number(item || 0))
+  const right = normalizeVersion(version2).split('.').map((item) => Number(item || 0))
+
+  for (let index = 0; index < Math.max(left.length, right.length); index += 1) {
+    const leftValue = left[index] || 0
+    const rightValue = right[index] || 0
+
+    if (leftValue > rightValue) return 1
+    if (leftValue < rightValue) return -1
+  }
+
+  return 0
+}
+
 export function isNativeAppRuntime() {
   return getRuntimeTarget() === RUNTIME_TARGETS.native
 }
@@ -210,56 +225,59 @@ function asReleaseCandidate(payload, source) {
   }
 }
 
-async function firstSuccessful(sources, toCandidate, timeoutMs) {
+async function collectCandidates(sources, toCandidate, timeoutMs) {
   if (!sources.length) {
-    throw new Error('No update sources available')
+    return []
   }
 
-  const errors = []
+  const settled = await Promise.allSettled(
+    sources.map((source) =>
+      fetchJson(source, timeoutMs).then((payload) => toCandidate(payload, source)),
+    ),
+  )
 
-  return new Promise((resolve, reject) => {
-    let pending = sources.length
+  return settled
+    .filter((result) => result.status === 'fulfilled')
+    .map((result) => result.value)
+}
 
-    for (const source of sources) {
-      fetchJson(source, timeoutMs)
-        .then((payload) => toCandidate(payload, source))
-        .then((candidate) => resolve(candidate))
-        .catch((error) => {
-          errors.push(error)
-          pending -= 1
+function pickLatestCandidate(candidates) {
+  if (!candidates.length) {
+    return null
+  }
 
-          if (pending === 0) {
-            reject(errors[errors.length - 1] || new Error('Update request failed'))
-          }
-        })
-    }
-  })
+  return candidates.reduce((latest, candidate) => {
+    if (!latest) return candidate
+
+    const versionCompare = compareVersions(candidate.versionName, latest.versionName)
+    if (versionCompare > 0) return candidate
+    if (versionCompare < 0) return latest
+
+    const latestCode = Number(latest.versionCode || 0)
+    const candidateCode = Number(candidate.versionCode || 0)
+
+    if (candidateCode > latestCode) return candidate
+    if (candidateCode < latestCode) return latest
+
+    return latest
+  }, null)
 }
 
 export async function fetchLatestReleaseInfo() {
   const manifestSources = getUpdateManifestSources()
   const releaseApiSources = getReleaseApiSources()
 
-  const primaryManifestSources = manifestSources.slice(0, 3)
-  const fallbackManifestSources = manifestSources.slice(3)
-  const primaryReleaseSources = releaseApiSources.slice(0, 3)
-  const fallbackReleaseSources = releaseApiSources.slice(3)
+  const manifestCandidates = await collectCandidates(manifestSources, asManifestCandidate, PRIMARY_REQUEST_TIMEOUT_MS)
 
-  try {
-    return await firstSuccessful(primaryManifestSources, asManifestCandidate, PRIMARY_REQUEST_TIMEOUT_MS)
-  } catch {}
-
-  try {
-    return await firstSuccessful(fallbackManifestSources, asManifestCandidate, FALLBACK_REQUEST_TIMEOUT_MS)
-  } catch {}
-
-  try {
-    return await firstSuccessful(primaryReleaseSources, asReleaseCandidate, PRIMARY_REQUEST_TIMEOUT_MS)
-  } catch {}
-
-  try {
-    return await firstSuccessful(fallbackReleaseSources, asReleaseCandidate, FALLBACK_REQUEST_TIMEOUT_MS)
-  } catch (error) {
-    throw error || new Error('Failed to check updates, please try again later.')
+  if (manifestCandidates.length) {
+    return pickLatestCandidate(manifestCandidates)
   }
+
+  const releaseCandidates = await collectCandidates(releaseApiSources, asReleaseCandidate, FALLBACK_REQUEST_TIMEOUT_MS)
+
+  if (releaseCandidates.length) {
+    return pickLatestCandidate(releaseCandidates)
+  }
+
+  throw new Error('Failed to check updates, please try again later.')
 }

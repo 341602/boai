@@ -28,7 +28,11 @@ watch(() => route.name, () => {
 <template>
   <div class="app-root" :class="[rootModeClass, showWithBar ? 'app-root--with-bar' : '', route.name === 'immersive' ? 'app-root--immersive' : '']">
     <div v-if="showBrand" class="app-brand">{{ TEXTS.heroEyebrow }}</div>
-    <RouterView />
+    <RouterView v-slot="{ Component, route: viewRoute }">
+      <Transition name="page-flow" mode="out-in">
+        <component :is="Component" :key="viewRoute.name || viewRoute.path" />
+      </Transition>
+    </RouterView>
     <GlobalPlayerBar />
   </div>
 </template>
